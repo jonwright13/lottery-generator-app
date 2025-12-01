@@ -40,6 +40,7 @@ export class ThresholdCriteria {
   maxMultiplesAllowed: Record<number, number>;
 
   constructor(lotteryNumbers: LotteryTuple[], debug = false) {
+    console.log(lotteryNumbers);
     this.maxPatternProbs = this.getMaxPatternProbabilities(
       lotteryNumbers,
       debug
