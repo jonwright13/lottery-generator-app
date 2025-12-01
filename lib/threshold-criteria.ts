@@ -40,7 +40,6 @@ export class ThresholdCriteria {
   maxMultiplesAllowed: Record<number, number>;
 
   constructor(lotteryNumbers: LotteryTuple[], debug = false) {
-    console.log(lotteryNumbers);
     this.maxPatternProbs = this.getMaxPatternProbabilities(
       lotteryNumbers,
       debug
@@ -84,7 +83,6 @@ export class ThresholdCriteria {
     lotteryNumbers: LotteryTuple[],
     debug = true
   ): Record<string, number> {
-    console.log(lotteryNumbers[0].length);
     const numPositions = lotteryNumbers[0].length ?? 7;
 
     // Position counters: one per index, counting occurrences of each value

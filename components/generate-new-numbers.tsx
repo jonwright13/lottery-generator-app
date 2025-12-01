@@ -14,7 +14,13 @@ export const GenerateNumbersContainer = () => {
   );
   const handleGenerate = async () => {
     const lotteryNumbers = await getLatestLotteryNumbers();
-    console.log("Lottery Numbers:", lotteryNumbers.length);
+    console.log("Lottery numbers length: ", lotteryNumbers.length);
+
+    if (!lotteryNumbers.length) {
+      alert("Error fetching lottery numbers");
+      throw new Error("Error fetching lottery numbers");
+    }
+
     const thresholdCriteria = new ThresholdCriteria(lotteryNumbers, false);
 
     const res = generateValidNumberSet(lotteryNumbers, {
