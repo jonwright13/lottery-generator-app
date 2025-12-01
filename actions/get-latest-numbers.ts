@@ -1,11 +1,9 @@
-"use server";
-
 import { LotteryTuple } from "@/types";
 
-const url =
-  "https://lottery.merseyworld.com/cgi-bin/lottery?days=20&Machine=Z&Ballset=0&order=1&show=1&year=0&display=CSV";
-
 export const getLatestLotteryNumbers = async (): Promise<LotteryTuple[]> => {
+  const url =
+    "https://lottery.merseyworld.com/cgi-bin/lottery?days=20&Machine=Z&Ballset=0&order=1&show=1&year=0&display=CSV";
+
   const response = await fetch(url, {
     cache: "no-store",
     headers: {
