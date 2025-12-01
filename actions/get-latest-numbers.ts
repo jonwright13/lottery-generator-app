@@ -6,7 +6,15 @@ const url =
   "https://lottery.merseyworld.com/cgi-bin/lottery?days=20&Machine=Z&Ballset=0&order=1&show=1&year=0&display=CSV";
 
 export const getLatestLotteryNumbers = async (): Promise<LotteryTuple[]> => {
-  const response = await fetch(url, { cache: "no-store" });
+  const response = await fetch(url, {
+    cache: "no-store",
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+        "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      Accept: "text/csv, text/plain, */*",
+    },
+  });
 
   if (!response.ok) {
     console.error("Lottery fetch failed", response.status, response.statusText);
