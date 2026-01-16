@@ -13,8 +13,9 @@ export const GenerateNumbersContainer = () => {
     null
   );
   const handleGenerate = async () => {
-    const lotteryNumbers = await getLatestLotteryNumbers();
-    console.log("Lottery numbers length: ", lotteryNumbers.length);
+    const response = await fetch("/data/external-data.json");
+    const data = await response.json();
+    const lotteryNumbers = data.results;
 
     if (!lotteryNumbers.length) {
       alert("Error fetching lottery numbers");

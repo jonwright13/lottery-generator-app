@@ -8,7 +8,9 @@ export const CheckNumbersContainer = () => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    const pastNumbers = await getLatestLotteryNumbers();
+    const response = await fetch("/data/external-data.json");
+    const data = await response.json();
+    const pastNumbers: LotteryTuple[] = data.results;
 
     if (!pastNumbers)
       return alert("No numbers to check against. Try refreshing the page");
