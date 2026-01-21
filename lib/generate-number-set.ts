@@ -44,27 +44,54 @@ export interface GenerateValidNumberSetResult {
 }
 
 export interface GenerateValidNumberSetOptions {
-  minMain?: number;
-  maxMain?: number;
-  countMain?: number;
-  minLucky?: number;
-  maxLucky?: number;
-  countLucky?: number;
-  minScore?: number;
-  maxIterations?: number;
-  sumMin?: number;
-  sumMax?: number;
-  maxMainGapThreshold?: number;
-  maxLuckyGapThreshold?: number;
-  oddRange?: OddRange;
-  maxMultiplesAllowed?: Record<number, number>;
-  patternProbThreshold?: number;
-  debug?: boolean;
+  minMain: number;
+  maxMain: number;
+  countMain: number;
+  minLucky: number;
+  maxLucky: number;
+  countLucky: number;
+  minScore: number;
+  maxIterations: number;
+  sumMin: number;
+  sumMax: number;
+  maxMainGapThreshold: number;
+  maxLuckyGapThreshold: number;
+  oddRange: OddRange;
+  maxMultiplesAllowed: Record<number, number>;
+  debug: boolean;
 }
+
+export const DEFAULT_OPTIONS: GenerateValidNumberSetOptions = {
+  minMain: 1,
+  maxMain: 50,
+  countMain: 5,
+  minLucky: 1,
+  maxLucky: 11,
+  countLucky: 2,
+  minScore: 5,
+  maxIterations: 1_000_000,
+  sumMin: 42,
+  sumMax: 222,
+  maxMainGapThreshold: 19,
+  maxLuckyGapThreshold: 4,
+  oddRange: [1, 4] as OddRange,
+  maxMultiplesAllowed: {
+    2: 4,
+    3: 4,
+    4: 3,
+    5: 2,
+    6: 2,
+    7: 2,
+    8: 2,
+    9: 2,
+    10: 2,
+  },
+  debug: false,
+} as const;
 
 export function generateValidNumberSet(
   lotteryNumbers: LotteryTuple[],
-  options: GenerateValidNumberSetOptions = {}
+  options: Partial<GenerateValidNumberSetOptions> = {},
 ): GenerateValidNumberSetResult {
   const {
     minMain = 1,
@@ -73,7 +100,7 @@ export function generateValidNumberSet(
     minLucky = 1,
     maxLucky = 11,
     countLucky = 2,
-    minScore = 10,
+    minScore = 5,
     maxIterations = 1_000_000,
     sumMin = 42,
     sumMax = 222,
@@ -91,18 +118,17 @@ export function generateValidNumberSet(
       9: 2,
       10: 2,
     },
-    patternProbThreshold = 8, // currently not enforced (same as commented Python)
     debug = false,
   } = options;
 
   console.log(
-    `\nRunning Lottery Number Generator. Max Iterations: ${maxIterations}`
+    `\nRunning Lottery Number Generator. Max Iterations: ${maxIterations}`,
   );
 
   // Set of historical combinations for O(1) lookups
   // Python: set(lottery_numbers) where each element is a tuple of 7 strings
   const lotteryNumbersSet = new Set<string>(
-    lotteryNumbers.map((draw) => draw.join(","))
+    lotteryNumbers.map((draw) => draw.join(",")),
   );
 
   const totalDraws = lotteryNumbers.length;
@@ -119,7 +145,7 @@ export function generateValidNumberSet(
         counter[key] = (counter[key] ?? 0) + 1;
       }
       return counter;
-    }
+    },
   );
 
   const triedMainCombinations = new Set<string>();
@@ -137,7 +163,7 @@ export function generateValidNumberSet(
       countMain,
       minMain,
       maxMain,
-      triedMainCombinations
+      triedMainCombinations,
     ); // returns sorted list of numbers
 
     // Check multiples count per base in main numbers
@@ -153,7 +179,7 @@ export function generateValidNumberSet(
 
         if (debug) {
           console.log(
-            `Iteration ${iteration}: Too many multiples of ${base} in main numbers. Regenerating...`
+            `Iteration ${iteration}: Too many multiples of ${base} in main numbers. Regenerating...`,
           );
         }
         break;
@@ -167,7 +193,7 @@ export function generateValidNumberSet(
       triedMainCombinations.add(mainNums.join(","));
       if (debug) {
         console.log(
-          `Iteration ${iteration}: Gap exceeds max allowed ${maxMainGapThreshold}. Regenerating...`
+          `Iteration ${iteration}: Gap exceeds max allowed ${maxMainGapThreshold}. Regenerating...`,
         );
       }
       continue;
@@ -181,8 +207,8 @@ export function generateValidNumberSet(
         console.log(
           `Iteration ${iteration}: Sum ${mainNums.reduce(
             (a, b) => a + b,
-            0
-          )} outside range (${sumMin}-${sumMax}). Regenerating...`
+            0,
+          )} outside range (${sumMin}-${sumMax}). Regenerating...`,
         );
       }
       continue;
@@ -195,7 +221,7 @@ export function generateValidNumberSet(
       triedMainCombinations.add(mainNums.join(","));
       if (debug) {
         console.log(
-          `Iteration ${iteration}: Main numbers have ${maxRun} consecutive numbers. Regenerating...`
+          `Iteration ${iteration}: Main numbers have ${maxRun} consecutive numbers. Regenerating...`,
         );
       }
       continue;
@@ -204,7 +230,7 @@ export function generateValidNumberSet(
     // Odd/even balance
     const oddCount = mainNums.reduce(
       (acc, num) => acc + (num % 2 === 1 ? 1 : 0),
-      0
+      0,
     );
 
     if (oddCount < oddRange[0] || oddCount > oddRange[1]) {
@@ -212,7 +238,7 @@ export function generateValidNumberSet(
       triedMainCombinations.add(mainNums.join(","));
       if (debug) {
         console.log(
-          `Iteration ${iteration}: Odd count ${oddCount} outside balanced range (${oddRange[0]}–${oddRange[1]}). Regenerating...`
+          `Iteration ${iteration}: Odd count ${oddCount} outside balanced range (${oddRange[0]}–${oddRange[1]}). Regenerating...`,
         );
       }
       continue;
@@ -226,8 +252,8 @@ export function generateValidNumberSet(
       if (debug) {
         console.log(
           `Iteration ${iteration}: Main numbers too clustered. Groups: ${JSON.stringify(
-            clusterCounts
-          )}. Regenerating...`
+            clusterCounts,
+          )}. Regenerating...`,
         );
       }
       continue;
@@ -238,7 +264,7 @@ export function generateValidNumberSet(
       countLucky,
       minLucky,
       maxLucky,
-      triedLuckyCombinations
+      triedLuckyCombinations,
     );
 
     // Gap between lucky numbers
@@ -247,7 +273,7 @@ export function generateValidNumberSet(
       triedLuckyCombinations.add(luckyNums.join(","));
       if (debug) {
         console.log(
-          `Iteration ${iteration}: lucky_nums gap exceeds max allowed ${maxLuckyGapThreshold}. Regenerating...`
+          `Iteration ${iteration}: lucky_nums gap exceeds max allowed ${maxLuckyGapThreshold}. Regenerating...`,
         );
       }
       continue;
@@ -256,7 +282,7 @@ export function generateValidNumberSet(
     // COMBINED
     const combinedNums = [...mainNums, ...luckyNums];
     const combinedTupleArr = combinedNums.map((num) =>
-      num.toString().padStart(2, "0")
+      num.toString().padStart(2, "0"),
     );
     const combinedKey = combinedTupleArr.join(",");
 
@@ -264,7 +290,7 @@ export function generateValidNumberSet(
       iterationCheckDict.generation_duplicate += 1;
       if (debug) {
         console.log(
-          `Iteration ${iteration}: Generation duplicate found. Regenerating...`
+          `Iteration ${iteration}: Generation duplicate found. Regenerating...`,
         );
       }
       continue;
@@ -289,39 +315,19 @@ export function generateValidNumberSet(
       probs.push(prob);
     }
 
-    const patternProb = generatePatternProbabilities(probs);
-
-    // Python logic is commented out; keeping commented here as well
-    /*
-    if (
-      patternProb["5_main+1_lucky_special_1"] < patternProbThreshold ||
-      patternProb["5_main+1_lucky_special_2"] < patternProbThreshold
-    ) {
-      iterationCheckDict.pattern_prob_threshold += 1;
-      triedCombinedCombinations.add(combinedKey);
-      if (debug) {
-        console.log(
-          `Iteration ${iteration}: pattern_prob_threshold hit. Retrying...`
-        );
-      }
-      continue;
-    }
-    */
-
     const avgScore = probs.reduce((a, b) => a + b, 0) / probs.length;
 
     if (avgScore > bestScore) {
       bestScore = avgScore;
       bestCombination = combinedTupleArr as LotteryTuple;
-      bestPatternProb = patternProb;
       bestIteration = iteration;
     }
 
     if (avgScore >= minScore) {
       console.log(
         `Iteration ${iteration}: Valid combination found with score ${avgScore.toFixed(
-          2
-        )}%`
+          2,
+        )}%`,
       );
       return {
         bestCombination,
@@ -333,8 +339,8 @@ export function generateValidNumberSet(
 
   console.log(
     `Max iterations reached. Best score so far: ${bestScore.toFixed(
-      2
-    )}%. Found at iteration ${bestIteration}`
+      2,
+    )}%. Found at iteration ${bestIteration}`,
   );
 
   return {
