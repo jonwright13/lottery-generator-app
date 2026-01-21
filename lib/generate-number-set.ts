@@ -40,7 +40,8 @@ export type PatternProbabilities = Record<string, number>;
 export interface GenerateValidNumberSetResult {
   bestCombination: LotteryTuple | null;
   bestScore: number;
-  bestPatternProb: PatternProbabilities | null;
+  bestPatternProb: number[] | null;
+  iterations: number;
 }
 
 export interface GenerateValidNumberSetOptions {
@@ -58,6 +59,7 @@ export interface GenerateValidNumberSetOptions {
   maxLuckyGapThreshold: number;
   oddRange: OddRange;
   maxMultiplesAllowed: Record<number, number>;
+  clusterMax: number;
   debug: boolean;
 }
 
@@ -86,6 +88,7 @@ export const DEFAULT_OPTIONS: GenerateValidNumberSetOptions = {
     9: 2,
     10: 2,
   },
+  clusterMax: 3,
   debug: false,
 } as const;
 
@@ -118,6 +121,7 @@ export function generateValidNumberSet(
       9: 2,
       10: 2,
     },
+    clusterMax = 3,
     debug = false,
   } = options;
 
@@ -126,7 +130,6 @@ export function generateValidNumberSet(
   );
 
   // Set of historical combinations for O(1) lookups
-  // Python: set(lottery_numbers) where each element is a tuple of 7 strings
   const lotteryNumbersSet = new Set<string>(
     lotteryNumbers.map((draw) => draw.join(",")),
   );
@@ -135,7 +138,6 @@ export function generateValidNumberSet(
   const numPositions = lotteryNumbers[0]?.length ?? 0;
 
   // Precompute frequency counters per position
-  // Python: position_counters = [Counter(draw[pos] for draw in lottery_numbers) ...]
   const positionCounters: Array<Record<string, number>> = Array.from(
     { length: numPositions },
     (_, pos) => {
@@ -154,7 +156,7 @@ export function generateValidNumberSet(
 
   let bestScore = 0;
   let bestCombination: LotteryTuple | null = null;
-  let bestPatternProb: PatternProbabilities | null = null;
+  let bestPatternProb: number[] | null = null;
   let bestIteration = 0;
 
   for (let iteration = 1; iteration <= maxIterations; iteration++) {
@@ -246,7 +248,7 @@ export function generateValidNumberSet(
 
     // Clustering on main numbers
     const clusterCounts = countClustersMainNumbers(mainNums);
-    if (Object.values(clusterCounts).some((count) => count > 3)) {
+    if (Object.values(clusterCounts).some((count) => count > clusterMax)) {
       iterationCheckDict.cluster_count += 1;
       triedMainCombinations.add(mainNums.join(","));
       if (debug) {
@@ -314,7 +316,7 @@ export function generateValidNumberSet(
       const prob = totalDraws > 0 ? (count / totalDraws) * 100 : 0;
       probs.push(prob);
     }
-
+    bestPatternProb = probs;
     const avgScore = probs.reduce((a, b) => a + b, 0) / probs.length;
 
     if (avgScore > bestScore) {
@@ -333,6 +335,7 @@ export function generateValidNumberSet(
         bestCombination,
         bestScore,
         bestPatternProb,
+        iterations: iteration,
       };
     }
   }
@@ -347,5 +350,6 @@ export function generateValidNumberSet(
     bestCombination,
     bestScore,
     bestPatternProb,
+    iterations: maxIterations,
   };
 }

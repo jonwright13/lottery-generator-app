@@ -37,6 +37,13 @@ export interface DistributionAnalysis {
   pct: number;
 }
 
+export interface HeatCell {
+  pos: number;
+  num: number;
+  count: number;
+  pct: number;
+}
+
 export class ThresholdCriteria {
   maxPatternProbs: Record<string, number>;
   oddRange: OddRange;
@@ -47,6 +54,7 @@ export class ThresholdCriteria {
   maxMultiplesAllowed: Record<number, number>;
   distribution: DistributionAnalysis[];
   gapDistributionData: GapDistribution;
+  positionCounters: Array<Record<string, number>>;
 
   constructor(lotteryNumbers: LotteryTuple[], debug = false) {
     this.maxPatternProbs = this.getMaxPatternProbabilities(
@@ -88,6 +96,52 @@ export class ThresholdCriteria {
       true,
       debug,
     );
+
+    this.positionCounters = this.getPositionCounters(lotteryNumbers);
+  }
+
+  private getPositionCounters(
+    lotteryNumbers: LotteryTuple[],
+  ): Array<Record<string, number>> {
+    const numPositions = lotteryNumbers[0]?.length ?? 0;
+    return Array.from({ length: numPositions }, (_, pos) => {
+      const counter: Record<string, number> = {};
+      for (const draw of lotteryNumbers) {
+        const key = draw[pos];
+        counter[key] = (counter[key] ?? 0) + 1;
+      }
+      return counter;
+    });
+  }
+
+  public toHeatmapCells(min: number, max: number): HeatCell[] {
+    const cells: HeatCell[] = [];
+
+    for (let pos = 0; pos < this.positionCounters.length; pos++) {
+      const counter = this.positionCounters[pos];
+
+      // total draws for this position
+      let total = 0;
+      for (let num = min; num <= max; num++) {
+        const key = String(num).padStart(2, "0");
+        total += counter[key] ?? 0;
+      }
+
+      // build cells with pct
+      for (let num = min; num <= max; num++) {
+        const key = String(num).padStart(2, "0");
+        const count = counter[key] ?? 0;
+
+        cells.push({
+          pos,
+          num,
+          count,
+          pct: total > 0 ? count / total : 0,
+        });
+      }
+    }
+
+    return cells;
   }
 
   private getMaxPatternProbabilities(
