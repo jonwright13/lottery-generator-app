@@ -5,10 +5,10 @@ import { ThemeToggle } from "./theme-toggle";
 
 export const Navbar = () => {
   return (
-    <header className="flex gap-x-8 justify-between border p-4 items-center">
+    <header className="flex gap-x-8 justify-between border p-4 items-center w-full">
       <Link
         href="/"
-        className="text-lg font-semibold hover:text-accent-foreground hover:underline"
+        className="text-base lg:text-lg font-medium lg:font-semibold hover:text-accent-foreground hover:underline"
       >
         <h1>Lottery Number Generator</h1>
       </Link>

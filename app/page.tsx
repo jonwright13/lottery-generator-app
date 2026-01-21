@@ -141,9 +141,9 @@ export default function Home() {
   console.log(results?.bestPatternProb);
 
   return (
-    <div className="flex flex-col gap-y-4 w-full">
+    <div className="flex flex-col gap-y-4 w-full justify-center">
       <h1 className="text-2xl font-bold">Generate Numbers</h1>
-      <div className="grid grid-cols-2 gap-x-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
         <Card className="flex flex-col gap-y-4 border rounded-md p-4 w-full">
           <div className="flex justify-between items-center px-2">
             <h3 className="text-lg font-semibold">Generate</h3>
@@ -158,7 +158,7 @@ export default function Home() {
           {results && (
             <>
               <div className="grid grid-cols-2 gap-2 items-center">
-                <Label>Completed in:</Label>
+                <Label className="text-sm">Completed in:</Label>
                 <Label>
                   {durationMs ? (durationMs / 1000).toFixed(2) : 0}s
                 </Label>
@@ -167,8 +167,8 @@ export default function Home() {
                 <Label>Positional Frequency Score:</Label>
                 <Label>{results?.bestScore.toFixed(2)}%</Label>
               </div>
-              <div className="flex gap-x-4 items-center justify-between w-full">
-                <Card className="p-4 w-full">
+              <div className="flex gap-x-2 lg:gap-x-4 items-center justify-between w-full">
+                <Card className="p-2 py-4 lg:p-4 w-full">
                   <ul className="flex gap-x-2 items-center w-fit mx-auto">
                     {results?.bestCombination?.map((n, index) => (
                       <li
