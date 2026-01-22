@@ -2,13 +2,13 @@
 //   count_main: how many main numbers
 //   count_lucky: how many lucky numbers
 //   special: optional marker (None/null in Python)
-export interface PatternDef {
+interface PatternDef {
   countMain: number;
   countLucky: number;
   special: number | null;
 }
 
-export const PATTERNS: PatternDef[] = [
+const PATTERNS: PatternDef[] = [
   { countMain: 5, countLucky: 2, special: null }, // 5 main + 2 specials
   { countMain: 5, countLucky: 1, special: 1 }, // 5 main + first special
   { countMain: 5, countLucky: 1, special: 2 }, // 5 main + second special
@@ -27,7 +27,7 @@ export const PATTERNS: PatternDef[] = [
 ];
 
 export function generatePatternProbabilities(
-  probs: number[]
+  probs: number[],
 ): Record<string, number> {
   const patternProb: Record<string, number> = {};
 

@@ -1,8 +1,12 @@
 // import this from wherever you put it
-import { LotteryTuple } from "@/types";
-import { generatePatternProbabilities } from "./generate-pattern-probs";
-
-export type OddRange = [number, number];
+import {
+  DistributionAnalysis,
+  HeatCell,
+  LotteryTuple,
+  OddRange,
+} from "@/lib/generator/types";
+import { generatePatternProbabilities } from "../generate-pattern-probs";
+import { percentile } from "./utils";
 
 interface GapDistribution {
   main: { gapCounters: Array<Record<number, number>> };
@@ -13,35 +17,6 @@ interface MultiplesDistributionResult {
   distribution: Record<number, number>;
   exampleDraws: LotteryTuple[];
   maxAllowed: number;
-}
-
-// Simple percentile helper to mimic numpy.percentile
-function percentile(values: number[], p: number): number {
-  if (values.length === 0) return 0;
-
-  const sorted = [...values].sort((a, b) => a - b);
-  const rank = (p / 100) * (sorted.length - 1);
-  const lower = Math.floor(rank);
-  const upper = Math.ceil(rank);
-
-  if (lower === upper) return sorted[lower];
-
-  const weight = rank - lower;
-  return sorted[lower] + (sorted[upper] - sorted[lower]) * weight;
-}
-
-export interface DistributionAnalysis {
-  label: string;
-  oddCount: number;
-  count: number;
-  pct: number;
-}
-
-export interface HeatCell {
-  pos: number;
-  num: number;
-  count: number;
-  pct: number;
 }
 
 export class ThresholdCriteria {

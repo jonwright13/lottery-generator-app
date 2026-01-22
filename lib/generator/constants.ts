@@ -1,0 +1,30 @@
+import { type GenerateValidNumberSetOptions, OddRange } from "./types";
+
+export const DEFAULT_OPTIONS: GenerateValidNumberSetOptions = {
+  minMain: 1,
+  maxMain: 50,
+  countMain: 5,
+  minLucky: 1,
+  maxLucky: 11,
+  countLucky: 2,
+  minScore: 5,
+  maxIterations: 1000000,
+  sumMin: 42,
+  sumMax: 222,
+  maxMainGapThreshold: 19,
+  maxLuckyGapThreshold: 4,
+  oddRange: [1, 4] as OddRange,
+  maxMultiplesAllowed: {
+    2: 4,
+    3: 4,
+    4: 3,
+    5: 2,
+    6: 2,
+    7: 2,
+    8: 2,
+    9: 2,
+    10: 2,
+  },
+  clusterMax: 3,
+  debug: false,
+} as const;

@@ -8,23 +8,28 @@ const URL =
 // where you want to write it (public is convenient for Next.js)
 const OUT_FILE = "public/data/external-data.json";
 
+const getLines = (csvText) =>
+  csvText
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
 const parseLotteryCsv = (csvText) => {
-  const rawLines = csvText.split(/\r?\n/).map((l) => l.trim());
-  const lines = rawLines.filter(Boolean);
+  const lines = getLines(csvText);
 
   const headerIndex = lines.findIndex(
     (line) =>
       line.includes("N1") &&
       line.includes("N2") &&
       line.includes("L1") &&
-      line.includes("L2")
+      line.includes("L2"),
   );
 
   if (headerIndex === -1) {
     throw new Error(
       `Could not find lottery CSV header line. First lines: ${lines
         .slice(0, 5)
-        .join(" | ")}`
+        .join(" | ")}`,
     );
   }
 
@@ -64,6 +69,86 @@ const parseLotteryCsv = (csvText) => {
   return results;
 };
 
+const parseDates = (csvText) => {
+  const lines = getLines(csvText);
+
+  // Find the header row (must contain at least these markers)
+  const headerIndex = lines.findIndex(
+    (line) =>
+      line.includes("Day") &&
+      line.includes("DD") &&
+      line.includes("MMM") &&
+      line.includes("YYYY") &&
+      line.includes("N1"),
+  );
+
+  if (headerIndex === -1) {
+    throw new Error(
+      `Could not find lottery CSV header line. First lines: ${lines
+        .slice(0, 5)
+        .join(" | ")}`,
+    );
+  }
+
+  const headers = lines[headerIndex].split(",").map((h) => h.trim());
+
+  const dayIdx = headers.indexOf("Day");
+  const ddIdx = headers.indexOf("DD");
+  const mmmIdx = headers.indexOf("MMM");
+  const yyyyIdx = headers.indexOf("YYYY");
+
+  if ([dayIdx, ddIdx, mmmIdx, yyyyIdx].some((i) => i === -1)) {
+    throw new Error(
+      `Missing expected date columns. Headers: ${headers.join(", ")}`,
+    );
+  }
+
+  const monthMap = {
+    Jan: "01",
+    Feb: "02",
+    Mar: "03",
+    Apr: "04",
+    May: "05",
+    Jun: "06",
+    Jul: "07",
+    Aug: "08",
+    Sep: "09",
+    Oct: "10",
+    Nov: "11",
+    Dec: "12",
+  };
+
+  /** @type {string[]} */
+  const dates = [];
+
+  for (let i = headerIndex + 1; i < lines.length; i++) {
+    const line = lines[i];
+
+    // stop at footer / summary
+    if (line.startsWith("* * *") || line.startsWith("All lotteries")) break;
+
+    const parts = line.split(",").map((p) => p.trim());
+    if (parts.length <= Math.max(dayIdx, ddIdx, mmmIdx, yyyyIdx)) {
+      continue;
+    }
+
+    const ddRaw = parts[ddIdx];
+    const mmmRaw = parts[mmmIdx];
+    const yyyyRaw = parts[yyyyIdx];
+
+    const dd = String(parseInt(ddRaw, 10)).padStart(2, "0");
+    const mm = monthMap[mmmRaw];
+    const yyyy = String(parseInt(yyyyRaw, 10));
+
+    if (!mm || !yyyy || Number.isNaN(Number(dd))) continue;
+
+    // ISO format (ignore Day-of-week, it’s redundant)
+    dates.push(`${yyyy}-${mm}-${dd}`);
+  }
+
+  return dates;
+};
+
 const main = async () => {
   // Ensure output directory exists
   await fs.mkdir(path.dirname(OUT_FILE), { recursive: true });
@@ -79,16 +164,18 @@ const main = async () => {
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(
-      `Fetch failed ${res.status} ${res.statusText}\n${text.slice(0, 500)}`
+      `Fetch failed ${res.status} ${res.statusText}\n${text.slice(0, 500)}`,
     );
   }
 
   const csv = await res.text();
   const tuples = parseLotteryCsv(csv);
+  const dates = parseDates(csv);
 
   const payload = {
     fetchedAt: new Date().toISOString(),
     source: URL,
+    dates,
     results: tuples, // array of 7-string arrays
   };
 

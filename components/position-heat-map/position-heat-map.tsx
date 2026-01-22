@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { HeatCell } from "@/lib/threshold-criteria";
+import { HeatCell } from "@/lib/generator/types";
 
 function clamp01(x: number) {
   return Math.max(0, Math.min(1, x));

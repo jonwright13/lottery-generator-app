@@ -1,11 +1,9 @@
 "use client";
 
-import {
-  DEFAULT_OPTIONS,
-  GenerateValidNumberSetOptions,
-} from "@/lib/generate-number-set";
-import { OddRange, ThresholdCriteria } from "@/lib/threshold-criteria";
-import { LotteryTuple } from "@/types";
+import { DEFAULT_OPTIONS } from "@/lib/generator/constants";
+import { GenerateValidNumberSetOptions } from "@/lib/generator/types";
+import { ThresholdCriteria } from "@/lib/generator/threshold-criteria";
+import { LotteryTuple } from "@/lib/generator/types";
 import {
   createContext,
   useCallback,
@@ -21,6 +19,7 @@ interface DataContextValue {
   isLoading: boolean;
   error: string | null;
   analysis: ThresholdCriteria | null;
+  dates: string[] | null;
   genOptions: GenerateValidNumberSetOptions;
   updateOptions: (key: keyof GenerateValidNumberSetOptions, value: any) => void;
   refresh: () => Promise<void>;
@@ -35,6 +34,7 @@ const dataContext = createContext<DataContextValue | null>(null);
 export const DataProvider = ({ children }: DataProviderProps) => {
   const [pastNumbers, setPastNumbers] = useState<LotteryTuple[] | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  const [dates, setDates] = useState<string[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [genOptions, setGenOptions] =
@@ -61,11 +61,13 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
       setPastNumbers(pastNumbersData);
       setUpdatedAt(json.fetchedAt as string);
+      setDates(json.dates as string[]);
     } catch (err) {
       console.error("Error fetching data.", err);
       setError(err instanceof Error ? err.message : "Something went wrong");
       setPastNumbers(null);
       setUpdatedAt(null);
+      setDates(null);
     } finally {
       setIsLoading(false);
     }
@@ -114,6 +116,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       analysis,
       genOptions,
       updateOptions,
+      dates,
     }),
     [
       pastNumbers,
@@ -124,6 +127,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       analysis,
       genOptions,
       updateOptions,
+      dates,
     ],
   );
 

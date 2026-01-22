@@ -1,9 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { FIELDS } from "@/constants";
 import { useData } from "@/context/useDataProvider";
-import { LotteryTuple } from "@/types";
+import { LotteryTuple } from "@/lib/generator/types";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
@@ -50,12 +51,12 @@ const CheckNumbersPage = () => {
 
   return (
     <>
-      <h1 className="text-2xl font-bold">Check Numbers</h1>
-      <p>
+      <h1 className="text-2xl font-bold mx-auto md:mx-0">Check Numbers</h1>
+      <p className="text-center md:text-left">
         Enter your numbers into the fields below to check whether they have been
         drawn in the past.
       </p>
-      <div className="flex flex-col gap-y-4">
+      <Card className="flex flex-col gap-y-4 p-4 w-fit mx-auto md:mx-0">
         <form className="flex flex-col gap-y-2" onSubmit={handleSubmit}>
           <div className="flex gap-x-1 items-center">
             {FIELDS.map(({ name, max }) => (
@@ -66,7 +67,7 @@ const CheckNumbersPage = () => {
                 min={1}
                 max={max}
                 required
-                className="border rounded-sm p-1 w-8 text-center"
+                className="border rounded-sm px-2 py-1 w-8 md:w-12 text-center text-sm md:text-base"
                 onWheel={(e) => e.currentTarget.blur()}
               />
             ))}
@@ -86,7 +87,7 @@ const CheckNumbersPage = () => {
             </Button>
           </div>
         </form>
-      </div>
+      </Card>
     </>
   );
 };

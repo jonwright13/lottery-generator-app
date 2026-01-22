@@ -1,6 +1,8 @@
-// e.g. type LotteryTuple = [string, string, string, string, string, string, string];
-import { generatePatternProbabilities } from "@/lib/generate-pattern-probs";
-import type { LotteryTuple } from "@/types";
+import type {
+  GenerateValidNumberSetOptions,
+  GenerateValidNumberSetResult,
+  LotteryTuple,
+} from "@/lib/generator/types";
 import {
   countClustersMainNumbers,
   countMaxConsecutiveRun,
@@ -9,120 +11,30 @@ import {
   isSumInRange,
   maxGapExceedsThreshold,
 } from "./utils";
-import { OddRange } from "./threshold-criteria";
-
-export interface IterationCheck {
-  generation_duplicate: number;
-  exceed_multiples: number;
-  max_run: number;
-  cluster_count: number;
-  odd_even_balance: number;
-  gap_exceeds_threshold: number;
-  sum_in_range: number;
-  historical_duplicate: number;
-  pattern_prob_threshold: number;
-}
-
-export const iterationCheckDict: IterationCheck = {
-  generation_duplicate: 0,
-  exceed_multiples: 0,
-  max_run: 0,
-  cluster_count: 0,
-  odd_even_balance: 0,
-  gap_exceeds_threshold: 0,
-  sum_in_range: 0,
-  historical_duplicate: 0,
-  pattern_prob_threshold: 0,
-};
-
-export type PatternProbabilities = Record<string, number>;
-
-export interface GenerateValidNumberSetResult {
-  bestCombination: LotteryTuple | null;
-  bestScore: number;
-  bestPatternProb: number[] | null;
-  iterations: number;
-}
-
-export interface GenerateValidNumberSetOptions {
-  minMain: number;
-  maxMain: number;
-  countMain: number;
-  minLucky: number;
-  maxLucky: number;
-  countLucky: number;
-  minScore: number;
-  maxIterations: number;
-  sumMin: number;
-  sumMax: number;
-  maxMainGapThreshold: number;
-  maxLuckyGapThreshold: number;
-  oddRange: OddRange;
-  maxMultiplesAllowed: Record<number, number>;
-  clusterMax: number;
-  debug: boolean;
-}
-
-export const DEFAULT_OPTIONS: GenerateValidNumberSetOptions = {
-  minMain: 1,
-  maxMain: 50,
-  countMain: 5,
-  minLucky: 1,
-  maxLucky: 11,
-  countLucky: 2,
-  minScore: 5,
-  maxIterations: 1_000_000,
-  sumMin: 42,
-  sumMax: 222,
-  maxMainGapThreshold: 19,
-  maxLuckyGapThreshold: 4,
-  oddRange: [1, 4] as OddRange,
-  maxMultiplesAllowed: {
-    2: 4,
-    3: 4,
-    4: 3,
-    5: 2,
-    6: 2,
-    7: 2,
-    8: 2,
-    9: 2,
-    10: 2,
-  },
-  clusterMax: 3,
-  debug: false,
-} as const;
+import { iterationCheckDict } from "./constants";
+import { DEFAULT_OPTIONS } from "../constants";
 
 export function generateValidNumberSet(
   lotteryNumbers: LotteryTuple[],
   options: Partial<GenerateValidNumberSetOptions> = {},
 ): GenerateValidNumberSetResult {
   const {
-    minMain = 1,
-    maxMain = 50,
-    countMain = 5,
-    minLucky = 1,
-    maxLucky = 11,
-    countLucky = 2,
-    minScore = 5,
-    maxIterations = 1_000_000,
-    sumMin = 42,
-    sumMax = 222,
-    maxMainGapThreshold = 19,
-    maxLuckyGapThreshold = 4,
-    oddRange = [1, 4],
-    maxMultiplesAllowed = {
-      2: 4,
-      3: 4,
-      4: 3,
-      5: 2,
-      6: 2,
-      7: 2,
-      8: 2,
-      9: 2,
-      10: 2,
-    },
-    clusterMax = 3,
-    debug = false,
+    minMain = DEFAULT_OPTIONS.minMain,
+    maxMain = DEFAULT_OPTIONS.maxMain,
+    countMain = DEFAULT_OPTIONS.countMain,
+    minLucky = DEFAULT_OPTIONS.minLucky,
+    maxLucky = DEFAULT_OPTIONS.maxLucky,
+    countLucky = DEFAULT_OPTIONS.countLucky,
+    minScore = DEFAULT_OPTIONS.minScore,
+    maxIterations = DEFAULT_OPTIONS.maxIterations,
+    sumMin = DEFAULT_OPTIONS.sumMin,
+    sumMax = DEFAULT_OPTIONS.sumMax,
+    maxMainGapThreshold = DEFAULT_OPTIONS.maxMainGapThreshold,
+    maxLuckyGapThreshold = DEFAULT_OPTIONS.maxLuckyGapThreshold,
+    oddRange = DEFAULT_OPTIONS.oddRange,
+    maxMultiplesAllowed = DEFAULT_OPTIONS.maxMultiplesAllowed,
+    clusterMax = DEFAULT_OPTIONS.clusterMax,
+    debug = DEFAULT_OPTIONS.debug,
   } = options;
 
   console.log(

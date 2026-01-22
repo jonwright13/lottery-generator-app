@@ -12,7 +12,7 @@ import { FIELDS } from "@/constants";
 import { useData } from "@/context/useDataProvider";
 
 const ViewHistoricalPage = () => {
-  const { pastNumbers, updatedAt } = useData();
+  const { pastNumbers, updatedAt, dates } = useData();
 
   if (!pastNumbers) return <h1>Loading...</h1>;
 
@@ -26,6 +26,7 @@ const ViewHistoricalPage = () => {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-40">Date</TableHead>
             {FIELDS.map((f) => (
               <TableHead key={f.name}>{f.label}</TableHead>
             ))}
@@ -34,6 +35,7 @@ const ViewHistoricalPage = () => {
         <TableBody>
           {pastNumbers.map((row, y) => (
             <TableRow key={`${y}-${row.join("-")}`}>
+              <TableCell>{dates?.[y]}</TableCell>
               {row.map((c, x) => (
                 <TableCell key={`${x}-${row.join("-")}`}>{c}</TableCell>
               ))}

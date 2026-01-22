@@ -1,4 +1,4 @@
-import { LotteryTuple } from "@/types";
+import { LotteryTuple } from "@/lib/generator/types";
 
 export const getLatestLotteryNumbers = async (): Promise<LotteryTuple[]> => {
   const url =
@@ -30,13 +30,13 @@ export const getLatestLotteryNumbers = async (): Promise<LotteryTuple[]> => {
       line.includes("N1") &&
       line.includes("N2") &&
       line.includes("L1") &&
-      line.includes("L2")
+      line.includes("L2"),
   );
 
   if (headerIndex === -1) {
     console.error(
       "Could not find header in lottery CSV. First few lines:",
-      lines.slice(0, 5)
+      lines.slice(0, 5),
     );
     throw new Error("Could not find lottery CSV header line");
   }
