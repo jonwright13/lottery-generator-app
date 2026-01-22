@@ -6,7 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DistributionAnalysis } from "@/lib/generator/types";
+import { type DistributionAnalysis } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { TableItemProps } from "../types";
 

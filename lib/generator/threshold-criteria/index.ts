@@ -1,10 +1,10 @@
 // import this from wherever you put it
 import {
-  DistributionAnalysis,
-  HeatCell,
-  LotteryTuple,
-  OddRange,
-} from "@/lib/generator/types";
+  type DistributionAnalysis,
+  type HeatCell,
+  type LotteryTuple,
+  type OddRange,
+} from "../types";
 import { generatePatternProbabilities } from "../generate-pattern-probs";
 import { percentile } from "./utils";
 

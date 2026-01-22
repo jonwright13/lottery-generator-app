@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { generateValidNumberSet } from "@/lib/generator/generate-numbers";
-import { GenerateValidNumberSetResult } from "@/lib/generator/types";
+import {
+  generateValidNumberSet,
+  type GenerateValidNumberSetResult,
+  type LotteryTuple,
+} from "@/lib/generator";
 import { useEffect, useRef, useState } from "react";
 import { GeneratorProps } from "../types";
-import { LotteryTuple } from "@/lib/generator/types";
 
 interface Props extends GeneratorProps {
   pastNumbers: LotteryTuple[] | null;

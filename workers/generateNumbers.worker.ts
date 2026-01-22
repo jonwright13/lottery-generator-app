@@ -1,4 +1,4 @@
-import { generateValidNumberSet } from "@/lib/generator/generate-numbers";
+import { generateValidNumberSet } from "@/lib/generator";
 
 self.onmessage = (e: MessageEvent) => {
   const { pastNumbers, genOptions } = e.data;

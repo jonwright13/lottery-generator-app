@@ -1,4 +1,4 @@
-import { type GenerateValidNumberSetOptions, OddRange } from "./types";
+import { type GenerateValidNumberSetOptions, type OddRange } from "./types";
 
 export const DEFAULT_OPTIONS: GenerateValidNumberSetOptions = {
   minMain: 1,

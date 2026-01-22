@@ -1,5 +1,7 @@
-import { GenerateValidNumberSetOptions } from "@/lib/generator/types";
-import { ThresholdCriteria } from "@/lib/generator/threshold-criteria";
+import {
+  ThresholdCriteria,
+  type GenerateValidNumberSetOptions,
+} from "@/lib/generator";
 
 export interface InputItemProps {
   genOptions: GenerateValidNumberSetOptions;

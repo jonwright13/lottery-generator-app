@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FIELDS } from "@/constants";
 import { useData } from "@/context/useDataProvider";
-import { LotteryTuple } from "@/lib/generator/types";
+import { LotteryTuple } from "@/lib/generator";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 

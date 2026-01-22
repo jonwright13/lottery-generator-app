@@ -1,9 +1,11 @@
 "use client";
 
-import { DEFAULT_OPTIONS } from "@/lib/generator/constants";
-import { GenerateValidNumberSetOptions } from "@/lib/generator/types";
-import { ThresholdCriteria } from "@/lib/generator/threshold-criteria";
-import { LotteryTuple } from "@/lib/generator/types";
+import {
+  ThresholdCriteria,
+  type GenerateValidNumberSetOptions,
+  type LotteryTuple,
+  DEFAULT_OPTIONS,
+} from "@/lib/generator";
 import {
   createContext,
   useCallback,

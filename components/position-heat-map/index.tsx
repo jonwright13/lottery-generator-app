@@ -1,4 +1,4 @@
-import { ThresholdCriteria } from "@/lib/generator/threshold-criteria";
+import { ThresholdCriteria } from "@/lib/generator";
 import { PositionHeatmap } from "./position-heat-map";
 
 interface Props {

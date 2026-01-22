@@ -2,7 +2,7 @@ import type {
   GenerateValidNumberSetOptions,
   GenerateValidNumberSetResult,
   LotteryTuple,
-} from "@/lib/generator/types";
+} from "../types";
 import {
   countClustersMainNumbers,
   countMaxConsecutiveRun,
