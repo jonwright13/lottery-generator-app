@@ -1,7 +1,8 @@
 {
-  "fetchedAt": "2026-02-13T06:53:19.400Z",
+  "fetchedAt": "2026-02-14T06:37:21.459Z",
   "source": "https://lottery.merseyworld.com/cgi-bin/lottery?days=20&Machine=Z&Ballset=0&order=1&show=1&year=0&display=CSV",
   "dates": [
+    "2026-02-13",
     "2026-02-10",
     "2026-02-06",
     "2026-02-03",
@@ -1923,6 +1924,15 @@
     "2004-02-13"
   ],
   "results": [
+    [
+      "09",
+      "13",
+      "31",
+      "37",
+      "40",
+      "06",
+      "09"
+    ],
     [
       "01",
       "17",
