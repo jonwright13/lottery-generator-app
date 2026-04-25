@@ -42,6 +42,11 @@ export interface GenerateValidNumberSetResult {
   rejections: RejectionCounts;
 }
 
+export type UpdateOptions = <K extends keyof GenerateValidNumberSetOptions>(
+  key: K,
+  value: GenerateValidNumberSetOptions[K],
+) => void;
+
 export interface GenerateValidNumberSetOptions {
   minMain: number;
   maxMain: number;

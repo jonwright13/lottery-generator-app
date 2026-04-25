@@ -4,6 +4,7 @@ import {
   ThresholdCriteria,
   type GenerateValidNumberSetOptions,
   type LotteryTuple,
+  type UpdateOptions,
   DEFAULT_OPTIONS,
 } from "@/lib/generator";
 import {
@@ -14,6 +15,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { toast } from "sonner";
 
 interface DataContextValue {
   pastNumbers: LotteryTuple[] | null;
@@ -23,7 +25,7 @@ interface DataContextValue {
   analysis: ThresholdCriteria | null;
   dates: string[] | null;
   genOptions: GenerateValidNumberSetOptions;
-  updateOptions: (key: keyof GenerateValidNumberSetOptions, value: any) => void;
+  updateOptions: UpdateOptions;
   refresh: () => Promise<void>;
 }
 
@@ -57,7 +59,9 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
       const pastNumbersData = json.results;
       if (!Array.isArray(pastNumbersData) || pastNumbersData.length === 0) {
-        alert("No numbers to check against. Try refreshing the page");
+        const message = "No historical numbers available.";
+        toast.error("No data loaded", { description: message });
+        setError(message);
         return;
       }
 
@@ -66,16 +70,18 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       setDates(json.dates as string[]);
     } catch (err) {
       console.error("Error fetching data.", err);
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message =
+        err instanceof Error ? err.message : "Something went wrong";
+      setError(message);
       setPastNumbers(null);
       setUpdatedAt(null);
       setDates(null);
+      toast.error("Failed to load data", { description: message });
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Fetch once on mount
   useEffect(() => {
     void fetchData();
   }, [fetchData]);
@@ -98,40 +104,24 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     });
   }, [analysis]);
 
-  const updateOptions = (
-    key: keyof GenerateValidNumberSetOptions,
-    value: any,
-  ) => {
+  const updateOptions = useCallback<UpdateOptions>((key, value) => {
     setGenOptions((prev) => ({
       ...prev,
       [key]: value,
     }));
-  };
+  }, []);
 
-  const value = useMemo(
-    () => ({
-      pastNumbers,
-      updatedAt,
-      isLoading,
-      error,
-      refresh: fetchData,
-      analysis,
-      genOptions,
-      updateOptions,
-      dates,
-    }),
-    [
-      pastNumbers,
-      updatedAt,
-      isLoading,
-      error,
-      fetchData,
-      analysis,
-      genOptions,
-      updateOptions,
-      dates,
-    ],
-  );
+  const value: DataContextValue = {
+    pastNumbers,
+    updatedAt,
+    isLoading,
+    error,
+    refresh: fetchData,
+    analysis,
+    genOptions,
+    updateOptions,
+    dates,
+  };
 
   return <dataContext.Provider value={value}>{children}</dataContext.Provider>;
 };

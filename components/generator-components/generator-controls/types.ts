@@ -1,6 +1,7 @@
 import {
   ThresholdCriteria,
   type GenerateValidNumberSetOptions,
+  type UpdateOptions,
 } from "@/lib/generator";
 
 export interface InputItemProps {
@@ -11,5 +12,5 @@ export interface InputItemProps {
 export interface TableItemProps {
   analysis: ThresholdCriteria | null;
   genOptions: GenerateValidNumberSetOptions;
-  updateOptions: (key: keyof GenerateValidNumberSetOptions, value: any) => void;
+  updateOptions: UpdateOptions;
 }

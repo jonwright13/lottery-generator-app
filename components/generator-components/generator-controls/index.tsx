@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import {
   ThresholdCriteria,
   type GenerateValidNumberSetOptions,
+  type UpdateOptions,
 } from "@/lib/generator";
 import { GeneratorProps } from "../types";
 import {
@@ -23,8 +24,14 @@ import {
 
 interface Props extends GeneratorProps {
   analysis: ThresholdCriteria | null;
-  updateOptions: (key: keyof GenerateValidNumberSetOptions, value: any) => void;
+  updateOptions: UpdateOptions;
 }
+
+type NumericOptionKey = {
+  [K in keyof GenerateValidNumberSetOptions]: GenerateValidNumberSetOptions[K] extends number
+    ? K
+    : never;
+}[keyof GenerateValidNumberSetOptions];
 
 export const GeneratorControls = ({
   analysis,
@@ -33,9 +40,9 @@ export const GeneratorControls = ({
 }: Props) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!analysis) return;
-    const name = e.target.name as keyof GenerateValidNumberSetOptions;
-    const value = e.target.value;
-    updateOptions(name, Number(value));
+    // Inputs in this surface only drive numeric option keys.
+    const name = e.target.name as NumericOptionKey;
+    updateOptions(name, Number(e.target.value));
   };
 
   return (

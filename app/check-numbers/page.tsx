@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { FIELDS } from "@/constants";
 import { useData } from "@/context/useDataProvider";
 import { LotteryTuple } from "@/lib/generator";
+import { toast } from "sonner";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
@@ -19,7 +20,9 @@ const CheckNumbersPage = () => {
       const formData = new FormData(form);
 
       if (!Array.isArray(pastNumbers) || pastNumbers.length === 0) {
-        alert("No numbers to check against. Try refreshing the page");
+        toast.error("No data loaded", {
+          description: "No historical numbers to check against.",
+        });
         return;
       }
 
@@ -43,9 +46,20 @@ const CheckNumbersPage = () => {
       const pastSet = new Set(pastNumbers.map((row) => row.join(",")));
       const match = pastSet.has(nums.join(","));
 
-      alert(match ? "Match found" : "No matches found");
+      if (match) {
+        toast.success("Match found", {
+          description: "These numbers were drawn in the historical data.",
+        });
+      } else {
+        toast("No exact match", {
+          description: "These numbers have not been drawn before.",
+        });
+      }
     } catch (err) {
-      console.log("Error checking numbers", err);
+      console.error("Error checking numbers", err);
+      toast.error("Could not check numbers", {
+        description: err instanceof Error ? err.message : "Invalid input",
+      });
     }
   };
 

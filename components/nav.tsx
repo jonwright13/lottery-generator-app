@@ -50,24 +50,24 @@ const NavItems = () => {
     <nav>
       <ul className="flex flex-col lg:flex-row gap-2 lg:gap-8 items-start lg:items-center">
         <li>
-          <a href="/" className="hover:underline">
+          <Link href="/" className="hover:underline">
             Generate
-          </a>
+          </Link>
         </li>
         <li>
-          <a href="/check-numbers" className="hover:underline">
+          <Link href="/check-numbers" className="hover:underline">
             Check Numbers
-          </a>
+          </Link>
         </li>
         <li>
-          <a href="/historical" className="hover:underline">
+          <Link href="/historical" className="hover:underline">
             Historical
-          </a>
+          </Link>
         </li>
         <li>
-          <a href="/about" className="hover:underline">
+          <Link href="/about" className="hover:underline">
             About
-          </a>
+          </Link>
         </li>
       </ul>
     </nav>

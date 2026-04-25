@@ -28,14 +28,14 @@ export const OddEvenDistItem = ({
     );
     const middleIndex = analysis.distribution.length / 2;
 
-    let prevRange = genOptions.oddRange;
+    const nextRange: [number, number] = [...genOptions.oddRange];
     if (index < middleIndex) {
-      prevRange[0] = r.oddCount;
+      nextRange[0] = r.oddCount;
     } else {
-      prevRange[1] = r.oddCount;
+      nextRange[1] = r.oddCount;
     }
 
-    updateOptions("oddRange", prevRange);
+    updateOptions("oddRange", nextRange);
   };
 
   return (

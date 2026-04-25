@@ -5,6 +5,7 @@ export type {
   GenerateValidNumberSetOptions,
   GenerateValidNumberSetResult,
   RejectionCounts,
+  UpdateOptions,
 } from "./types";
 
 export { DEFAULT_OPTIONS } from "./constants";
