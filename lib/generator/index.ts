@@ -4,6 +4,7 @@ export type {
   HeatCell,
   GenerateValidNumberSetOptions,
   GenerateValidNumberSetResult,
+  RejectionCounts,
 } from "./types";
 
 export { DEFAULT_OPTIONS } from "./constants";

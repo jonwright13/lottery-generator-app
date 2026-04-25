@@ -6,11 +6,12 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import {
-  generateValidNumberSet,
   type GenerateValidNumberSetResult,
   type LotteryTuple,
 } from "@/lib/generator";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import type { WorkerResponse } from "@/workers/generateNumbers.worker";
 import { GeneratorProps } from "../types";
 
 interface Props extends GeneratorProps {
@@ -46,26 +47,31 @@ export const GeneratorContainer = ({ pastNumbers, genOptions }: Props) => {
 
     startTimeRef.current = performance.now();
 
-    workerRef.current.onmessage = (e) => {
-      const msg = e.data as { ok: true; res: unknown };
-
+    const finishTimer = () => {
       const end = performance.now();
       const start = startTimeRef.current ?? end;
       setDurationMs(end - start);
+    };
 
-      setResults(msg.res as ReturnType<typeof generateValidNumberSet>);
+    workerRef.current.onmessage = (e: MessageEvent<WorkerResponse>) => {
+      finishTimer();
+      const msg = e.data;
+      if (msg.ok) {
+        setResults(msg.res);
+      } else {
+        console.error("Generator worker error:", msg.error);
+        toast.error("Generation failed", { description: msg.error });
+      }
       setIsGenerating(false);
     };
 
     workerRef.current.onerror = (err) => {
       console.error(err);
-
-      const end = performance.now();
-      const start = startTimeRef.current ?? end;
-      setDurationMs(end - start);
-
+      finishTimer();
       setIsGenerating(false);
-      alert("Generation failed");
+      toast.error("Generation failed", {
+        description: err.message || "Worker crashed",
+      });
     };
 
     workerRef.current.postMessage({ pastNumbers, genOptions });

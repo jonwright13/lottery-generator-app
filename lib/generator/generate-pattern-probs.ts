@@ -1,10 +1,7 @@
-// Example pattern type:
-//   count_main: how many main numbers
-//   count_lucky: how many lucky numbers
-//   special: optional marker (None/null in Python)
 interface PatternDef {
   countMain: number;
   countLucky: number;
+  // 1-indexed lucky position to use when countLucky === 1; null otherwise.
   special: number | null;
 }
 
@@ -26,31 +23,45 @@ const PATTERNS: PatternDef[] = [
   { countMain: 3, countLucky: 1, special: 2 }, // 3 main + second lucky
 ];
 
+const TOTAL_MAIN_POSITIONS = 5;
+
+function pickPatternProbs(
+  probs: number[],
+  { countMain, countLucky, special }: PatternDef,
+): number[] {
+  const picked: number[] = [];
+
+  for (let i = 0; i < countMain && i < probs.length; i++) {
+    picked.push(probs[i]);
+  }
+
+  if (countLucky === 2) {
+    for (let i = 0; i < 2; i++) {
+      const idx = TOTAL_MAIN_POSITIONS + i;
+      if (idx < probs.length) picked.push(probs[idx]);
+    }
+  } else if (countLucky === 1 && special !== null) {
+    const idx = TOTAL_MAIN_POSITIONS + (special - 1);
+    if (idx < probs.length) picked.push(probs[idx]);
+  }
+
+  return picked;
+}
+
 export function generatePatternProbabilities(
   probs: number[],
 ): Record<string, number> {
   const patternProb: Record<string, number> = {};
 
   for (const pattern of PATTERNS) {
-    const { countMain, countLucky, special } = pattern;
+    const slice = pickPatternProbs(probs, pattern);
+    const avg = slice.length
+      ? slice.reduce((a, b) => a + b, 0) / slice.length
+      : 0;
 
-    // Determine how many probability positions to slice
-    const sliceEnd = countLucky === 0 ? countMain : countMain + countLucky;
-
-    // Extract probabilities corresponding to the pattern
-    const patternSlice = probs.slice(0, sliceEnd);
-
-    // Compute average
-    const avg =
-      patternSlice.length > 0
-        ? patternSlice.reduce((a, b) => a + b, 0) / patternSlice.length
-        : 0;
-
-    // Build key
-    let key = `${countMain}_main+${countLucky}_lucky`;
-
-    if (special !== null && countLucky === 1) {
-      key += `_special_${special}`;
+    let key = `${pattern.countMain}_main+${pattern.countLucky}_lucky`;
+    if (pattern.special !== null && pattern.countLucky === 1) {
+      key += `_special_${pattern.special}`;
     }
 
     patternProb[key] = avg;

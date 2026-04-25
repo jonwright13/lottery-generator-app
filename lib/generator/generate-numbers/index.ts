@@ -2,6 +2,7 @@ import type {
   GenerateValidNumberSetOptions,
   GenerateValidNumberSetResult,
   LotteryTuple,
+  RejectionCounts,
 } from "../types";
 import {
   countClustersMainNumbers,
@@ -11,8 +12,18 @@ import {
   isSumInRange,
   maxGapExceedsThreshold,
 } from "./utils";
-import { iterationCheckDict } from "./constants";
 import { DEFAULT_OPTIONS } from "../constants";
+
+const emptyRejectionCounts = (): RejectionCounts => ({
+  generation_duplicate: 0,
+  exceed_multiples: 0,
+  max_run: 0,
+  cluster_count: 0,
+  odd_even_balance: 0,
+  gap_exceeds_threshold: 0,
+  sum_in_range: 0,
+  historical_duplicate: 0,
+});
 
 export function generateValidNumberSet(
   lotteryNumbers: LotteryTuple[],
@@ -37,9 +48,13 @@ export function generateValidNumberSet(
     debug = DEFAULT_OPTIONS.debug,
   } = options;
 
-  console.log(
-    `\nRunning Lottery Number Generator. Max Iterations: ${maxIterations}`,
-  );
+  if (debug) {
+    console.log(
+      `\nRunning Lottery Number Generator. Max Iterations: ${maxIterations}`,
+    );
+  }
+
+  const rejections = emptyRejectionCounts();
 
   // Set of historical combinations for O(1) lookups
   const lotteryNumbersSet = new Set<string>(
@@ -78,7 +93,7 @@ export function generateValidNumberSet(
       minMain,
       maxMain,
       triedMainCombinations,
-    ); // returns sorted list of numbers
+    );
 
     // Check multiples count per base in main numbers
     let exceedsMultiplesLimit = false;
@@ -88,7 +103,7 @@ export function generateValidNumberSet(
 
       if (countMultiples(mainNums, base) > maxAllowed) {
         exceedsMultiplesLimit = true;
-        iterationCheckDict.exceed_multiples += 1;
+        rejections.exceed_multiples += 1;
         triedMainCombinations.add(mainNums.join(","));
 
         if (debug) {
@@ -103,7 +118,7 @@ export function generateValidNumberSet(
 
     // Gap between main numbers
     if (maxGapExceedsThreshold(mainNums, maxMainGapThreshold)) {
-      iterationCheckDict.gap_exceeds_threshold += 1;
+      rejections.gap_exceeds_threshold += 1;
       triedMainCombinations.add(mainNums.join(","));
       if (debug) {
         console.log(
@@ -115,7 +130,7 @@ export function generateValidNumberSet(
 
     // Sum range of main numbers
     if (!isSumInRange(mainNums, sumMin, sumMax)) {
-      iterationCheckDict.sum_in_range += 1;
+      rejections.sum_in_range += 1;
       triedMainCombinations.add(mainNums.join(","));
       if (debug) {
         console.log(
@@ -131,7 +146,7 @@ export function generateValidNumberSet(
     // Consecutive runs
     const maxRun = countMaxConsecutiveRun(mainNums);
     if (maxRun >= 3) {
-      iterationCheckDict.max_run += 1;
+      rejections.max_run += 1;
       triedMainCombinations.add(mainNums.join(","));
       if (debug) {
         console.log(
@@ -148,7 +163,7 @@ export function generateValidNumberSet(
     );
 
     if (oddCount < oddRange[0] || oddCount > oddRange[1]) {
-      iterationCheckDict.odd_even_balance += 1;
+      rejections.odd_even_balance += 1;
       triedMainCombinations.add(mainNums.join(","));
       if (debug) {
         console.log(
@@ -161,7 +176,7 @@ export function generateValidNumberSet(
     // Clustering on main numbers
     const clusterCounts = countClustersMainNumbers(mainNums);
     if (Object.values(clusterCounts).some((count) => count > clusterMax)) {
-      iterationCheckDict.cluster_count += 1;
+      rejections.cluster_count += 1;
       triedMainCombinations.add(mainNums.join(","));
       if (debug) {
         console.log(
@@ -183,7 +198,7 @@ export function generateValidNumberSet(
 
     // Gap between lucky numbers
     if (maxGapExceedsThreshold(luckyNums, maxLuckyGapThreshold)) {
-      iterationCheckDict.gap_exceeds_threshold += 1;
+      rejections.gap_exceeds_threshold += 1;
       triedLuckyCombinations.add(luckyNums.join(","));
       if (debug) {
         console.log(
@@ -201,7 +216,7 @@ export function generateValidNumberSet(
     const combinedKey = combinedTupleArr.join(",");
 
     if (triedCombinedCombinations.has(combinedKey)) {
-      iterationCheckDict.generation_duplicate += 1;
+      rejections.generation_duplicate += 1;
       if (debug) {
         console.log(
           `Iteration ${iteration}: Generation duplicate found. Regenerating...`,
@@ -212,13 +227,15 @@ export function generateValidNumberSet(
 
     // Historical duplicate check
     if (lotteryNumbersSet.has(combinedKey)) {
-      iterationCheckDict.historical_duplicate += 1;
+      rejections.historical_duplicate += 1;
       triedCombinedCombinations.add(combinedKey);
       if (debug) {
         console.log(`Iteration ${iteration}: Combination exists. Retrying...`);
       }
       continue;
     }
+
+    triedCombinedCombinations.add(combinedKey);
 
     // Probability score based on historical draws
     const probs: number[] = [];
@@ -228,40 +245,46 @@ export function generateValidNumberSet(
       const prob = totalDraws > 0 ? (count / totalDraws) * 100 : 0;
       probs.push(prob);
     }
-    bestPatternProb = probs;
     const avgScore = probs.reduce((a, b) => a + b, 0) / probs.length;
 
     if (avgScore > bestScore) {
       bestScore = avgScore;
       bestCombination = combinedTupleArr as LotteryTuple;
+      bestPatternProb = probs;
       bestIteration = iteration;
     }
 
     if (avgScore >= minScore) {
-      console.log(
-        `Iteration ${iteration}: Valid combination found with score ${avgScore.toFixed(
-          2,
-        )}%`,
-      );
+      if (debug) {
+        console.log(
+          `Iteration ${iteration}: Valid combination found with score ${avgScore.toFixed(
+            2,
+          )}%`,
+        );
+      }
       return {
         bestCombination,
         bestScore,
         bestPatternProb,
         iterations: iteration,
+        rejections,
       };
     }
   }
 
-  console.log(
-    `Max iterations reached. Best score so far: ${bestScore.toFixed(
-      2,
-    )}%. Found at iteration ${bestIteration}`,
-  );
+  if (debug) {
+    console.log(
+      `Max iterations reached. Best score so far: ${bestScore.toFixed(
+        2,
+      )}%. Found at iteration ${bestIteration}`,
+    );
+  }
 
   return {
     bestCombination,
     bestScore,
     bestPatternProb,
     iterations: maxIterations,
+    rejections,
   };
 }

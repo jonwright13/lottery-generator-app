@@ -23,11 +23,23 @@ export interface HeatCell {
   count: number;
   pct: number;
 }
+export interface RejectionCounts {
+  generation_duplicate: number;
+  exceed_multiples: number;
+  max_run: number;
+  cluster_count: number;
+  odd_even_balance: number;
+  gap_exceeds_threshold: number;
+  sum_in_range: number;
+  historical_duplicate: number;
+}
+
 export interface GenerateValidNumberSetResult {
   bestCombination: LotteryTuple | null;
   bestScore: number;
   bestPatternProb: number[] | null;
   iterations: number;
+  rejections: RejectionCounts;
 }
 
 export interface GenerateValidNumberSetOptions {
