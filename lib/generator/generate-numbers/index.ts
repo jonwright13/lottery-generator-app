@@ -87,10 +87,21 @@ export function generateValidNumberSet(
     maxSameLastDigit = DEFAULT_OPTIONS.maxSameLastDigit,
     maxPreviousDrawOverlap = DEFAULT_OPTIONS.maxPreviousDrawOverlap,
     pairScoreWeight = DEFAULT_OPTIONS.pairScoreWeight,
+    recentWindowSize = DEFAULT_OPTIONS.recentWindowSize,
+    recentBias = DEFAULT_OPTIONS.recentBias,
     debug = DEFAULT_OPTIONS.debug,
   } = options;
 
   const weight = Math.min(1, Math.max(0, pairScoreWeight));
+  const recentWeight = Math.min(1, Math.max(0, recentBias));
+  const effectiveRecentWindow = Math.max(
+    0,
+    Math.min(recentWindowSize, lotteryNumbers.length),
+  );
+  const recentEnabled = recentWeight > 0 && effectiveRecentWindow > 0;
+  const recentPositionCounters = recentEnabled
+    ? buildPositionCounters(lotteryNumbers.slice(0, effectiveRecentWindow))
+    : null;
 
   if (debug) {
     console.log(
@@ -134,6 +145,7 @@ export function generateValidNumberSet(
 
   let bestScore = 0;
   let bestPairScore = 0;
+  let bestRecentScore = 0;
   let bestCombinedScore = -1;
   let bestCombination: LotteryTuple | null = null;
   let bestPatternProb: number[] | null = null;
@@ -208,6 +220,21 @@ export function generateValidNumberSet(
     }
     const avgScore = probs.reduce((a, b) => a + b, 0) / probs.length;
 
+    let recentScore = 0;
+    if (recentEnabled && recentPositionCounters) {
+      let recentSum = 0;
+      for (let index = 0; index < combinedTupleArr.length; index++) {
+        const numStr = combinedTupleArr[index];
+        const count = recentPositionCounters[index]?.[numStr] ?? 0;
+        recentSum += (count / effectiveRecentWindow) * 100;
+      }
+      recentScore = recentSum / combinedTupleArr.length;
+    }
+
+    const positionBlended = recentEnabled
+      ? (1 - recentWeight) * avgScore + recentWeight * recentScore
+      : avgScore;
+
     let pairScore = 0;
     if (totalDraws > 0) {
       const sortedMain = [...mainNums].sort((a, b) => a - b);
@@ -223,12 +250,13 @@ export function generateValidNumberSet(
       pairScore = pairN > 0 ? ((pairSum / pairN) / totalDraws) * 100 : 0;
     }
 
-    const combinedScore = (1 - weight) * avgScore + weight * pairScore;
+    const combinedScore = (1 - weight) * positionBlended + weight * pairScore;
 
     if (combinedScore > bestCombinedScore) {
       bestCombinedScore = combinedScore;
       bestScore = avgScore;
       bestPairScore = pairScore;
+      bestRecentScore = recentScore;
       bestCombination = combinedTupleArr as LotteryTuple;
       bestPatternProb = probs;
       bestIteration = iteration;
@@ -239,13 +267,14 @@ export function generateValidNumberSet(
         console.log(
           `Iteration ${iteration}: valid combination found, position ${avgScore.toFixed(
             2,
-          )}% pair ${pairScore.toFixed(2)}% combined ${combinedScore.toFixed(2)}%`,
+          )}% recent ${recentScore.toFixed(2)}% pair ${pairScore.toFixed(2)}% combined ${combinedScore.toFixed(2)}%`,
         );
       }
       return {
         bestCombination,
         bestScore,
         bestPairScore,
+        bestRecentScore,
         bestPatternProb,
         iterations: iteration,
         rejections,
@@ -265,6 +294,7 @@ export function generateValidNumberSet(
     bestCombination,
     bestScore,
     bestPairScore,
+    bestRecentScore,
     bestPatternProb,
     iterations: maxIterations,
     rejections,

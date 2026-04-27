@@ -30,5 +30,7 @@ export const DEFAULT_OPTIONS: GenerateValidNumberSetOptions = {
   maxSameLastDigit: 3,
   maxPreviousDrawOverlap: 2,
   pairScoreWeight: 0,
+  recentWindowSize: 50,
+  recentBias: 0,
   debug: false,
 } as const;

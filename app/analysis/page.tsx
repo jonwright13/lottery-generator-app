@@ -3,6 +3,7 @@
 import { ArithmeticProgressionDistribution } from "@/components/analysis-components/arithmetic-progression-distribution";
 import { ClusterDistribution } from "@/components/analysis-components/cluster-distribution";
 import { GapDistribution } from "@/components/analysis-components/gap-distribution";
+import { HotColdNumbers } from "@/components/analysis-components/hot-cold-numbers";
 import { LastDigitDistribution } from "@/components/analysis-components/last-digit-distribution";
 import { NumberFrequency } from "@/components/analysis-components/number-frequency";
 import { OddEvenDistribution } from "@/components/analysis-components/odd-even-distribution";
@@ -153,6 +154,8 @@ const AnalysisContent = () => {
           <ArithmeticProgressionDistribution analysis={windowedAnalysis} />
 
           <PairCoOccurrence analysis={windowedAnalysis} />
+
+          <HotColdNumbers pastNumbers={windowedPast} />
         </>
       )}
     </div>
