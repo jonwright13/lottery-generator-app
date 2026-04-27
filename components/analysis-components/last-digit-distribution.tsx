@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { HelpPopover } from "@/components/ui/help-popover";
 import type { ThresholdCriteria } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
@@ -56,14 +57,32 @@ export const LastDigitDistribution = ({ analysis }: Props) => {
 
   return (
     <Card className="flex flex-col gap-y-4 p-4 w-full">
-      <div className="flex flex-col gap-y-1">
-        <h2 className="text-lg font-medium">Last-digit distribution</h2>
-        <p className="text-xs text-muted-foreground">
-          How the last digits (0–9) of the 5 main numbers spread across each
-          draw. Highlighted bars stay at or under the
-          95th-percentile cap of {analysis.maxSameLastDigit} same-last-digit
-          numbers per draw.
-        </p>
+      <div className="flex items-start justify-between gap-x-3">
+        <div className="flex flex-col gap-y-1">
+          <h2 className="text-lg font-medium">Last-digit distribution</h2>
+          <p className="text-xs text-muted-foreground">
+            How the last digits (0–9) of the 5 main numbers spread across each
+            draw. Highlighted bars stay at or under the 95th-percentile cap of
+            {" "}
+            {analysis.maxSameLastDigit} same-last-digit numbers per draw.
+          </p>
+        </div>
+        <HelpPopover title="Last-digit distribution">
+          <p>
+            For each draw we look at the final digit of every main number
+            (e.g. 7, 17, 27, 37, 47 all end in 7). The first chart shows the
+            overall count per digit; the second shows how often a draw
+            repeats the same last digit across multiple numbers.
+          </p>
+          <p>
+            <strong>Why it matters:</strong> draws where many balls share a
+            last digit are uncommon, and sets like &ldquo;all numbers ending
+            in 7&rdquo; tend to be popular human picks (so jackpots get
+            shared more often). The generator caps how many same-last-digit
+            balls a candidate can contain at the 95th-percentile observed
+            value.
+          </p>
+        </HelpPopover>
       </div>
 
       <div className="flex flex-col gap-y-2">

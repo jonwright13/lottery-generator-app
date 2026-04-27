@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { HelpPopover } from "@/components/ui/help-popover";
 import type { ThresholdCriteria } from "@/lib/generator";
 import { useMemo } from "react";
 
@@ -77,13 +78,33 @@ export const PairCoOccurrence = ({ analysis }: Props) => {
 
   return (
     <Card className="flex flex-col gap-y-4 p-4 w-full">
-      <div className="flex flex-col gap-y-1">
-        <h2 className="text-lg font-medium">Pair co-occurrence</h2>
-        <p className="text-xs text-muted-foreground">
-          How often each pair of main numbers has appeared together in
-          historical draws. Used by the generator&rsquo;s optional pair-cohesion
-          score, which biases toward sets whose pairs co-occur more frequently.
-        </p>
+      <div className="flex items-start justify-between gap-x-3">
+        <div className="flex flex-col gap-y-1">
+          <h2 className="text-lg font-medium">Pair co-occurrence</h2>
+          <p className="text-xs text-muted-foreground">
+            How often each pair of main numbers has appeared together in
+            historical draws. Used by the generator&rsquo;s optional
+            pair-cohesion score, which biases toward sets whose pairs
+            co-occur more frequently.
+          </p>
+        </div>
+        <HelpPopover title="Pair co-occurrence">
+          <p>
+            For every possible pair of main numbers (e.g. 7 and 23), we count
+            how many historical draws contained both of them. The
+            &ldquo;hottest pairs&rdquo; have shown up together most often;
+            most pairs sit closer to the average.
+          </p>
+          <p>
+            <strong>Why it matters:</strong> in a fair draw all pairs are
+            equally likely, but real history shows clusters of numbers that
+            have shared draws more than average. The generator&apos;s
+            pair-cohesion bias (toggleable in the controls) rewards
+            candidate sets whose internal pairs have richer joint history,
+            steering picks toward number combinations the past has actually
+            produced.
+          </p>
+        </HelpPopover>
       </div>
 
       <div className="flex flex-col gap-y-2">

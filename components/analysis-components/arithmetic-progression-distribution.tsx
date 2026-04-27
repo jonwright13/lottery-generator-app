@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { HelpPopover } from "@/components/ui/help-popover";
 import type { ThresholdCriteria } from "@/lib/generator";
 import { useMemo } from "react";
 
@@ -41,14 +42,32 @@ export const ArithmeticProgressionDistribution = ({ analysis }: Props) => {
 
   return (
     <Card className="flex flex-col gap-y-3 p-4 w-full">
-      <div className="flex flex-col gap-y-1">
-        <h2 className="text-lg font-medium">Arithmetic progression (AP-3)</h2>
-        <p className="text-xs text-muted-foreground">
-          How often three of the five main numbers form an arithmetic
-          progression (e.g. 5, 10, 15) with common difference d ≥ 2. Generated
-          sets are rejected when this pattern is present; d = 1 is already
-          covered by the consecutive-run rule.
-        </p>
+      <div className="flex items-start justify-between gap-x-3">
+        <div className="flex flex-col gap-y-1">
+          <h2 className="text-lg font-medium">Arithmetic progression (AP-3)</h2>
+          <p className="text-xs text-muted-foreground">
+            How often three of the five main numbers form an arithmetic
+            progression (e.g. 5, 10, 15) with common difference d ≥ 2.
+            Generated sets are rejected when this pattern is present; d = 1
+            is already covered by the consecutive-run rule.
+          </p>
+        </div>
+        <HelpPopover title="Arithmetic progression (AP-3)">
+          <p>
+            An arithmetic progression of three is any trio of numbers with a
+            constant step between them: 5-10-15 (step 5), 7-13-19 (step 6),
+            and so on. We scan every historical draw for any AP-3 hidden in
+            the 5 main numbers and count how often each step size appears.
+          </p>
+          <p>
+            <strong>Why it matters:</strong> these patterns occur far less
+            often than random chance would suggest, partly because they look
+            &ldquo;designed&rdquo; and partly because the pool isn&apos;t
+            wide enough for many large-step progressions. They&apos;re also
+            popular human picks. The generator rejects any candidate
+            containing an AP-3 with step ≥ 2.
+          </p>
+        </HelpPopover>
       </div>
 
       <ul

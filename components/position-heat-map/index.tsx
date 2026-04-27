@@ -5,6 +5,7 @@ import { ThresholdCriteria } from "@/lib/generator";
 import { FIELDS } from "@/constants";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { HelpPopover } from "@/components/ui/help-popover";
 import { cn } from "@/lib/utils";
 import { PositionHeatmap } from "./position-heat-map";
 
@@ -38,7 +39,7 @@ export const Heatmap = ({ analysis }: Props) => {
 
   return (
     <Card className="flex flex-col gap-y-3 p-4 w-full">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-y-1">
           <h2 className="text-lg font-medium">
             Distribution of Numbers by Draw Position
@@ -48,31 +49,48 @@ export const Heatmap = ({ analysis }: Props) => {
             Darker cells appear more often.
           </p>
         </div>
-        <div
-          role="group"
-          aria-label="Display values as"
-          className="inline-flex rounded-md border p-0.5"
-        >
-          <Button
-            type="button"
-            size="sm"
-            variant={usePct ? "default" : "ghost"}
-            aria-pressed={usePct}
-            onClick={() => setUsePct(true)}
-            className={cn("h-7 px-3 text-xs")}
+        <div className="flex items-center gap-x-2">
+          <div
+            role="group"
+            aria-label="Display values as"
+            className="inline-flex rounded-md border p-0.5"
           >
-            Percentage
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={!usePct ? "default" : "ghost"}
-            aria-pressed={!usePct}
-            onClick={() => setUsePct(false)}
-            className={cn("h-7 px-3 text-xs")}
-          >
-            Count
-          </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={usePct ? "default" : "ghost"}
+              aria-pressed={usePct}
+              onClick={() => setUsePct(true)}
+              className={cn("h-7 px-3 text-xs")}
+            >
+              Percentage
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={!usePct ? "default" : "ghost"}
+              aria-pressed={!usePct}
+              onClick={() => setUsePct(false)}
+              className={cn("h-7 px-3 text-xs")}
+            >
+              Count
+            </Button>
+          </div>
+          <HelpPopover title="Distribution of numbers by draw position">
+            <p>
+              Before display, every historical draw has its 5 main numbers
+              sorted smallest to largest, plus its 2 lucky numbers. Each row of
+              the grid is one of those slots. Darker cells mean that number
+              landed in that slot more often.
+            </p>
+            <p>
+              <strong>Why it matters:</strong> the lowest of the five mains is
+              almost always a small number, and the largest is almost always a
+              high one. The generator uses this distribution to score
+              candidates — sets that match the historical per-position pattern
+              are preferred over sets that don&apos;t.
+            </p>
+          </HelpPopover>
         </div>
       </div>
 
