@@ -1,6 +1,7 @@
 "use client";
 
 import { CopyToClipboardButton } from "@/components/copy-to-clipboard-button";
+import { MatchResults } from "@/components/match-results";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -41,8 +42,11 @@ export const GeneratorContainer = ({
   const [durationMs, setDurationMs] = useState<number | null>(null);
 
   const workerRef = useRef<Worker | null>(null);
-  const { list: savedList, add: saveNumbers, remove: removeSaved } =
-    useSavedNumbers();
+  const {
+    list: savedList,
+    add: saveNumbers,
+    remove: removeSaved,
+  } = useSavedNumbers();
 
   const currentKey = results?.bestCombination?.join(",") ?? null;
   const savedEntry = currentKey
@@ -105,7 +109,11 @@ export const GeneratorContainer = ({
       });
     };
 
-    workerRef.current.postMessage({ pastNumbers, genOptions, positionCounters });
+    workerRef.current.postMessage({
+      pastNumbers,
+      genOptions,
+      positionCounters,
+    });
   };
 
   const combination = results?.bestCombination ?? null;
@@ -115,138 +123,145 @@ export const GeneratorContainer = ({
       ? `Generated numbers: main ${combination.slice(0, MAIN_COUNT).join(", ")}; lucky ${combination.slice(MAIN_COUNT).join(", ")}.`
       : "";
 
+  const userMain = combination ? combination.slice(0, MAIN_COUNT) : null;
+  const userLucky = combination ? combination.slice(MAIN_COUNT) : null;
+
   return (
-    <Card className="flex flex-col gap-y-4 border rounded-md p-4 w-full">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Generate</h3>
-      </div>
-      <Button
-        onClick={handleGenerate}
-        disabled={isGenerating}
-        aria-busy={isGenerating}
-        size="lg"
-        className="w-full"
-      >
-        {isGenerating ? (
-          <>
-            <Spinner className="size-4" aria-hidden="true" />
-            Generating…
-          </>
-        ) : combination ? (
-          "Generate again"
-        ) : (
-          "Generate numbers"
+    <div className="flex flex-col gap-y-4 w-full">
+      <Card className="flex flex-col gap-y-4 border rounded-md p-4 w-full">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Generate</h3>
+        </div>
+        <Button
+          onClick={handleGenerate}
+          disabled={isGenerating}
+          aria-busy={isGenerating}
+          size="lg"
+          className="w-full"
+        >
+          {isGenerating ? (
+            <>
+              <Spinner className="size-4" aria-hidden="true" />
+              Generating…
+            </>
+          ) : combination ? (
+            "Generate again"
+          ) : (
+            "Generate numbers"
+          )}
+        </Button>
+
+        <div className="sr-only" aria-live="polite" role="status">
+          {announcement}
+        </div>
+
+        {!combination && !isGenerating && (
+          <p className="text-sm text-muted-foreground text-center px-2">
+            Click <span className="font-medium">Generate numbers</span> to draw
+            a set tuned to historical patterns.
+          </p>
         )}
-      </Button>
 
-      <div className="sr-only" aria-live="polite" role="status">
-        {announcement}
-      </div>
+        {combination && (
+          <>
+            <div className="flex flex-col gap-y-3">
+              <Card className="p-3 lg:p-4 w-full bg-muted/30">
+                <ol
+                  className="flex flex-wrap gap-x-2 gap-y-2 items-center justify-center"
+                  aria-label="Generated lottery numbers"
+                >
+                  {combination.map((n, index) => {
+                    const isMain = index < MAIN_COUNT;
+                    const score = results?.bestPatternProb?.[index];
+                    const positionLabel = isMain
+                      ? `Main ${index + 1}`
+                      : `Lucky ${index - MAIN_COUNT + 1}`;
+                    return (
+                      <Fragment key={index}>
+                        {index === MAIN_COUNT && (
+                          <li
+                            aria-hidden="true"
+                            className="h-8 w-px bg-border self-center"
+                          />
+                        )}
+                        <li className="flex items-center">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span
+                                tabIndex={0}
+                                className={cn(
+                                  "inline-flex items-center justify-center size-10 md:size-11 rounded-full font-semibold text-sm md:text-base select-none",
+                                  "ring-1 ring-inset focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                  isMain
+                                    ? "bg-sky-100 text-sky-900 ring-sky-200 dark:bg-sky-900/40 dark:text-sky-100 dark:ring-sky-800"
+                                    : "bg-amber-100 text-amber-900 ring-amber-200 dark:bg-amber-900/40 dark:text-amber-100 dark:ring-amber-800",
+                                )}
+                              >
+                                {n}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {positionLabel}
+                              {typeof score === "number" && (
+                                <> — pattern probability {score.toFixed(2)}%</>
+                              )}
+                            </TooltipContent>
+                          </Tooltip>
+                        </li>
+                      </Fragment>
+                    );
+                  })}
+                </ol>
+              </Card>
 
-      {!combination && !isGenerating && (
-        <p className="text-sm text-muted-foreground text-center px-2">
-          Click <span className="font-medium">Generate numbers</span> to draw a
-          set tuned to historical patterns.
-        </p>
-      )}
+              <div className="flex gap-x-2 justify-end">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant={savedEntry ? "default" : "outline"}
+                      size="icon"
+                      onClick={() => handleToggleSave(combination)}
+                      aria-label={
+                        savedEntry
+                          ? "Remove from saved sets"
+                          : "Save to Check Numbers"
+                      }
+                    >
+                      {savedEntry ? <BookmarkCheckIcon /> : <BookmarkIcon />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {savedEntry
+                      ? "Saved — click to remove"
+                      : "Save to Check Numbers"}
+                  </TooltipContent>
+                </Tooltip>
+                <CopyToClipboardButton txtToCopy={combination.join(", ")} />
+              </div>
+            </div>
+
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs md:text-sm border-t pt-3">
+              <dt className="text-muted-foreground">Completed in</dt>
+              <dd className="text-right tabular-nums">
+                {durationMs ? (durationMs / 1000).toFixed(2) : "0.00"}s
+              </dd>
+              <dt className="text-muted-foreground">Iterations</dt>
+              <dd className="text-right tabular-nums">{results?.iterations}</dd>
+              <dt className="text-muted-foreground">
+                Avg. positional frequency
+              </dt>
+              <dd className="text-right tabular-nums">
+                {results?.bestScore.toFixed(2)}%
+              </dd>
+            </dl>
+          </>
+        )}
+      </Card>
 
       {combination && (
-        <>
-          <div className="flex flex-col gap-y-3">
-            <Card className="p-3 lg:p-4 w-full bg-muted/30">
-              <ol
-                className="flex flex-wrap gap-x-2 gap-y-2 items-center justify-center"
-                aria-label="Generated lottery numbers"
-              >
-                {combination.map((n, index) => {
-                  const isMain = index < MAIN_COUNT;
-                  const score = results?.bestPatternProb?.[index];
-                  const positionLabel = isMain
-                    ? `Main ${index + 1}`
-                    : `Lucky ${index - MAIN_COUNT + 1}`;
-                  return (
-                    <Fragment key={index}>
-                      {index === MAIN_COUNT && (
-                        <li
-                          aria-hidden="true"
-                          className="h-8 w-px bg-border self-center"
-                        />
-                      )}
-                      <li className="flex items-center">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span
-                              tabIndex={0}
-                              className={cn(
-                                "inline-flex items-center justify-center size-10 md:size-11 rounded-full font-semibold text-sm md:text-base select-none",
-                                "ring-1 ring-inset focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                isMain
-                                  ? "bg-sky-100 text-sky-900 ring-sky-200 dark:bg-sky-900/40 dark:text-sky-100 dark:ring-sky-800"
-                                  : "bg-amber-100 text-amber-900 ring-amber-200 dark:bg-amber-900/40 dark:text-amber-100 dark:ring-amber-800",
-                              )}
-                            >
-                              {n}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {positionLabel}
-                            {typeof score === "number" && (
-                              <> — pattern probability {score.toFixed(2)}%</>
-                            )}
-                          </TooltipContent>
-                        </Tooltip>
-                      </li>
-                    </Fragment>
-                  );
-                })}
-              </ol>
-            </Card>
-
-            <div className="flex gap-x-2 justify-end">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant={savedEntry ? "default" : "outline"}
-                    size="icon"
-                    onClick={() => handleToggleSave(combination)}
-                    aria-label={
-                      savedEntry
-                        ? "Remove from saved sets"
-                        : "Save to Check Numbers"
-                    }
-                  >
-                    {savedEntry ? <BookmarkCheckIcon /> : <BookmarkIcon />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {savedEntry
-                    ? "Saved — click to remove"
-                    : "Save to Check Numbers"}
-                </TooltipContent>
-              </Tooltip>
-              <CopyToClipboardButton
-                txtToCopy={combination.join(", ")}
-              />
-            </div>
-          </div>
-
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs md:text-sm border-t pt-3">
-            <dt className="text-muted-foreground">Completed in</dt>
-            <dd className="text-right tabular-nums">
-              {durationMs ? (durationMs / 1000).toFixed(2) : "0.00"}s
-            </dd>
-            <dt className="text-muted-foreground">Iterations</dt>
-            <dd className="text-right tabular-nums">{results?.iterations}</dd>
-            <dt className="text-muted-foreground">
-              Avg. positional frequency
-            </dt>
-            <dd className="text-right tabular-nums">
-              {results?.bestScore.toFixed(2)}%
-            </dd>
-          </dl>
-        </>
+        <MatchResults userMain={userMain} userLucky={userLucky} />
       )}
-    </Card>
+    </div>
   );
 };
