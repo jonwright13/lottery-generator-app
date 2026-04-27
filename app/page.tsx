@@ -61,6 +61,7 @@ export default function Home() {
               combination={combination}
               bestPatternProb={results?.bestPatternProb ?? null}
               genOptions={genOptions}
+              previousDraw={pastNumbers[0] ?? null}
             />
           </>
         )}

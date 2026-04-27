@@ -21,6 +21,7 @@ import {
   MinMaxSumItem,
   OddEvenDistItem,
   PositionalFrequencyScoreItem,
+  PreviousDrawOverlapItem,
 } from "./accordion-items";
 
 interface Props extends GeneratorProps {
@@ -124,6 +125,20 @@ export const GeneratorControls = ({
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
             <LastDigitItem
+              genOptions={genOptions}
+              handleInputChange={handleInputChange}
+            />
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="previous-draw-overlap">
+          <AccordionTrigger>
+            <TriggerRow
+              label="Max Overlap w/ Previous Draw"
+              value={String(genOptions.maxPreviousDrawOverlap)}
+            />
+          </AccordionTrigger>
+          <AccordionContent className="flex flex-col gap-y-2">
+            <PreviousDrawOverlapItem
               genOptions={genOptions}
               handleInputChange={handleInputChange}
             />

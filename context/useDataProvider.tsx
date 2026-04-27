@@ -37,6 +37,7 @@ const seededOptions: GenerateValidNumberSetOptions = {
   maxMultiplesAllowed: analysis.maxMultiplesAllowed,
   oddRange: analysis.oddRange,
   maxSameLastDigit: analysis.maxSameLastDigit,
+  maxPreviousDrawOverlap: analysis.maxPreviousDrawOverlap,
 };
 
 interface DataContextValue {

@@ -23,6 +23,7 @@ const emptyRejectionCounts = (): RejectionCounts => ({
   sum_in_range: 0,
   historical_duplicate: 0,
   last_digit_repeat: 0,
+  previous_draw_overlap: 0,
 });
 
 function buildPositionCounters(
@@ -62,6 +63,7 @@ export function generateValidNumberSet(
     clusterMax = DEFAULT_OPTIONS.clusterMax,
     clusterGroupSize = DEFAULT_OPTIONS.clusterGroupSize,
     maxSameLastDigit = DEFAULT_OPTIONS.maxSameLastDigit,
+    maxPreviousDrawOverlap = DEFAULT_OPTIONS.maxPreviousDrawOverlap,
     debug = DEFAULT_OPTIONS.debug,
   } = options;
 
@@ -70,6 +72,9 @@ export function generateValidNumberSet(
       `\nRunning Lottery Number Generator. Max Iterations: ${maxIterations}`,
     );
   }
+
+  const previousDrawMain: number[] =
+    lotteryNumbers[0]?.slice(0, countMain).map((n) => parseInt(n, 10)) ?? [];
 
   const ruleOpts: RuleOptions = {
     maxMultiplesAllowed,
@@ -82,6 +87,8 @@ export function generateValidNumberSet(
     clusterGroupSize,
     maxMain,
     maxSameLastDigit,
+    maxPreviousDrawOverlap,
+    previousDrawMain,
   };
 
   const rejections = emptyRejectionCounts();

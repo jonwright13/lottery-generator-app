@@ -28,5 +28,6 @@ export const DEFAULT_OPTIONS: GenerateValidNumberSetOptions = {
   clusterMax: 3,
   clusterGroupSize: 10,
   maxSameLastDigit: 3,
+  maxPreviousDrawOverlap: 2,
   debug: false,
 } as const;

@@ -26,6 +26,13 @@ interface LastDigitDistribution {
   maxRepeatDistribution: Record<number, number>;
 }
 
+interface PreviousDrawOverlap {
+  /** Distribution of "main-number overlap with the immediately prior draw" (0..5). */
+  overlapDistribution: Record<number, number>;
+  /** Number of consecutive-draw pairs analysed (i.e. lotteryNumbers.length - 1). */
+  pairsAnalysed: number;
+}
+
 export class ThresholdCriteria {
   maxPatternProbs: Record<string, number>;
   oddRange: OddRange;
@@ -39,6 +46,8 @@ export class ThresholdCriteria {
   positionCounters: Array<Record<string, number>>;
   lastDigitDistributionData: LastDigitDistribution;
   maxSameLastDigit: number;
+  previousDrawOverlapData: PreviousDrawOverlap;
+  maxPreviousDrawOverlap: number;
 
   constructor(lotteryNumbers: LotteryTuple[], debug = false) {
     this.maxPatternProbs = this.getMaxPatternProbabilities(
@@ -87,6 +96,46 @@ export class ThresholdCriteria {
       this.analyzeLastDigitDistribution(lotteryNumbers, true, 95);
     this.lastDigitDistributionData = lastDigitDist;
     this.maxSameLastDigit = lastDigitMax;
+
+    const { distribution: overlapDist, maxAllowed: overlapMax } =
+      this.analyzePreviousDrawOverlap(lotteryNumbers, true, 95);
+    this.previousDrawOverlapData = overlapDist;
+    this.maxPreviousDrawOverlap = overlapMax;
+  }
+
+  analyzePreviousDrawOverlap(
+    lotteryNumbers: LotteryTuple[],
+    mainOnly = true,
+    percentileValue = 95,
+  ): { distribution: PreviousDrawOverlap; maxAllowed: number } {
+    const overlapDistribution: Record<number, number> = {};
+    const overlaps: number[] = [];
+    const lengthToCheck = mainOnly ? 5 : lotteryNumbers[0]?.length ?? 0;
+
+    for (let i = 0; i < lotteryNumbers.length - 1; i++) {
+      const a = new Set(lotteryNumbers[i].slice(0, lengthToCheck));
+      const b = lotteryNumbers[i + 1].slice(0, lengthToCheck);
+      let overlap = 0;
+      for (const n of b) if (a.has(n)) overlap += 1;
+      overlaps.push(overlap);
+      overlapDistribution[overlap] = (overlapDistribution[overlap] ?? 0) + 1;
+    }
+
+    for (let k = 0; k <= lengthToCheck; k++) {
+      if (!(k in overlapDistribution)) overlapDistribution[k] = 0;
+    }
+
+    const maxAllowed = overlaps.length
+      ? Math.floor(percentile(overlaps, percentileValue))
+      : lengthToCheck;
+
+    return {
+      distribution: {
+        overlapDistribution,
+        pairsAnalysed: overlaps.length,
+      },
+      maxAllowed: Math.max(0, maxAllowed),
+    };
   }
 
   analyzeLastDigitDistribution(
