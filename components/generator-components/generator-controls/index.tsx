@@ -55,7 +55,7 @@ export const GeneratorControls = ({
   };
 
   return (
-    <Card className="flex flex-col gap-y-4 border rounded-md p-4 w-full">
+    <Card className="flex flex-col gap-y-4 border rounded-md p-4 w-full h-full">
       <h3 className="text-lg font-semibold">Controls</h3>
       <Accordion type="single" collapsible>
         <AccordionItem value="max-iterations">

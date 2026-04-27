@@ -95,7 +95,7 @@ export const GeneratedStats = ({
   const maxProb = Math.max(...(bestPatternProb ?? [0]), 1);
 
   return (
-    <Card className="flex flex-col gap-y-4 p-4 w-full">
+    <Card className="flex flex-col gap-y-4 p-4 w-full h-full">
       <div className="flex flex-col gap-y-1">
         <h3 className="text-lg font-medium">Set characteristics</h3>
         <p className="text-xs text-muted-foreground">

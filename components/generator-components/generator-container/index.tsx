@@ -1,8 +1,6 @@
 "use client";
 
 import { CopyToClipboardButton } from "@/components/copy-to-clipboard-button";
-import { GeneratedStats } from "@/components/generator-components/generated-stats";
-import { MatchResults } from "@/components/match-results";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -18,259 +16,184 @@ import {
 } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { BookmarkCheckIcon, BookmarkIcon } from "lucide-react";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment } from "react";
 import { toast } from "sonner";
-import type { WorkerResponse } from "@/workers/generateNumbers.worker";
-import { GeneratorProps } from "../types";
 
-interface Props extends GeneratorProps {
-  pastNumbers: LotteryTuple[];
-  positionCounters?: Array<Record<string, number>>;
+interface Props {
+  isGenerating: boolean;
+  results: GenerateValidNumberSetResult | null;
+  durationMs: number | null;
+  onGenerate: () => void;
 }
 
 const MAIN_COUNT = 5;
 
 export const GeneratorContainer = ({
-  pastNumbers,
-  genOptions,
-  positionCounters,
+  isGenerating,
+  results,
+  durationMs,
+  onGenerate,
 }: Props) => {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [results, setResults] = useState<GenerateValidNumberSetResult | null>(
-    null,
-  );
-  const startTimeRef = useRef<number | null>(null);
-  const [durationMs, setDurationMs] = useState<number | null>(null);
-
-  const workerRef = useRef<Worker | null>(null);
   const {
     list: savedList,
     add: saveNumbers,
     remove: removeSaved,
   } = useSavedNumbers();
 
-  const currentKey = results?.bestCombination?.join(",") ?? null;
+  const combination = results?.bestCombination ?? null;
+  const currentKey = combination?.join(",") ?? null;
   const savedEntry = currentKey
     ? savedList.find((s) => s.numbers.join(",") === currentKey)
     : undefined;
 
-  const handleToggleSave = (combination: LotteryTuple) => {
+  const handleToggleSave = (combo: LotteryTuple) => {
     if (savedEntry) {
       removeSaved(savedEntry.id);
       toast("Removed from saved");
     } else {
-      saveNumbers(combination);
+      saveNumbers(combo);
       toast.success("Saved", {
         description: "Find it on the Check Numbers page.",
       });
     }
   };
 
-  useEffect(() => {
-    workerRef.current = new Worker(
-      new URL("@/workers/generateNumbers.worker.ts", import.meta.url),
-      { type: "module" },
-    );
-
-    return () => workerRef.current?.terminate();
-  }, []);
-
-  const handleGenerate = async () => {
-    if (!workerRef.current) throw new Error("Worker not ready");
-
-    setIsGenerating(true);
-    setDurationMs(null);
-
-    startTimeRef.current = performance.now();
-
-    const finishTimer = () => {
-      const end = performance.now();
-      const start = startTimeRef.current ?? end;
-      setDurationMs(end - start);
-    };
-
-    workerRef.current.onmessage = (e: MessageEvent<WorkerResponse>) => {
-      finishTimer();
-      const msg = e.data;
-      if (msg.ok) {
-        setResults(msg.res);
-      } else {
-        console.error("Generator worker error:", msg.error);
-        toast.error("Generation failed", { description: msg.error });
-      }
-      setIsGenerating(false);
-    };
-
-    workerRef.current.onerror = (err) => {
-      console.error(err);
-      finishTimer();
-      setIsGenerating(false);
-      toast.error("Generation failed", {
-        description: err.message || "Worker crashed",
-      });
-    };
-
-    workerRef.current.postMessage({
-      pastNumbers,
-      genOptions,
-      positionCounters,
-    });
-  };
-
-  const combination = results?.bestCombination ?? null;
   const announcement = isGenerating
     ? "Generating numbers"
     : combination
       ? `Generated numbers: main ${combination.slice(0, MAIN_COUNT).join(", ")}; lucky ${combination.slice(MAIN_COUNT).join(", ")}.`
       : "";
 
-  const userMain = combination ? combination.slice(0, MAIN_COUNT) : null;
-  const userLucky = combination ? combination.slice(MAIN_COUNT) : null;
-
   return (
-    <div className="flex flex-col gap-y-4 w-full">
-      <Card className="flex flex-col gap-y-4 border rounded-md p-4 w-full">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold">Generate</h3>
-        </div>
-        <Button
-          onClick={handleGenerate}
-          disabled={isGenerating}
-          aria-busy={isGenerating}
-          size="lg"
-          className="w-full"
-        >
-          {isGenerating ? (
-            <>
-              <Spinner className="size-4" aria-hidden="true" />
-              Generating…
-            </>
-          ) : combination ? (
-            "Generate again"
-          ) : (
-            "Generate numbers"
-          )}
-        </Button>
-
-        <div className="sr-only" aria-live="polite" role="status">
-          {announcement}
-        </div>
-
-        {!combination && !isGenerating && (
-          <p className="text-sm text-muted-foreground text-center px-2">
-            Click <span className="font-medium">Generate numbers</span> to draw
-            a set tuned to historical patterns.
-          </p>
-        )}
-
-        {combination && (
+    <Card className="flex flex-col gap-y-4 border rounded-md p-4 w-full h-full">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Generate</h3>
+      </div>
+      <Button
+        onClick={onGenerate}
+        disabled={isGenerating}
+        aria-busy={isGenerating}
+        size="lg"
+        className="w-full"
+      >
+        {isGenerating ? (
           <>
-            <div className="flex flex-col gap-y-3">
-              <Card className="p-3 lg:p-4 w-full bg-muted/30">
-                <ol
-                  className="flex flex-wrap gap-x-2 gap-y-2 items-center justify-center"
-                  aria-label="Generated lottery numbers"
-                >
-                  {combination.map((n, index) => {
-                    const isMain = index < MAIN_COUNT;
-                    const score = results?.bestPatternProb?.[index];
-                    const positionLabel = isMain
-                      ? `Main ${index + 1}`
-                      : `Lucky ${index - MAIN_COUNT + 1}`;
-                    return (
-                      <Fragment key={index}>
-                        {index === MAIN_COUNT && (
-                          <li
-                            aria-hidden="true"
-                            className="h-8 w-px bg-border self-center"
-                          />
-                        )}
-                        <li className="flex items-center">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span
-                                tabIndex={0}
-                                className={cn(
-                                  "inline-flex items-center justify-center size-10 md:size-11 rounded-full font-semibold text-sm md:text-base select-none",
-                                  "ring-1 ring-inset focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                  isMain
-                                    ? "bg-sky-100 text-sky-900 ring-sky-200 dark:bg-sky-900/40 dark:text-sky-100 dark:ring-sky-800"
-                                    : "bg-amber-100 text-amber-900 ring-amber-200 dark:bg-amber-900/40 dark:text-amber-100 dark:ring-amber-800",
-                                )}
-                              >
-                                {n}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {positionLabel}
-                              {typeof score === "number" && (
-                                <> — pattern probability {score.toFixed(2)}%</>
-                              )}
-                            </TooltipContent>
-                          </Tooltip>
-                        </li>
-                      </Fragment>
-                    );
-                  })}
-                </ol>
-              </Card>
-
-              <div className="flex gap-x-2 justify-end">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant={savedEntry ? "default" : "outline"}
-                      size="icon"
-                      onClick={() => handleToggleSave(combination)}
-                      aria-label={
-                        savedEntry
-                          ? "Remove from saved sets"
-                          : "Save to Check Numbers"
-                      }
-                    >
-                      {savedEntry ? <BookmarkCheckIcon /> : <BookmarkIcon />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {savedEntry
-                      ? "Saved — click to remove"
-                      : "Save to Check Numbers"}
-                  </TooltipContent>
-                </Tooltip>
-                <CopyToClipboardButton txtToCopy={combination.join(", ")} />
-              </div>
-            </div>
-
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs md:text-sm border-t pt-3">
-              <dt className="text-muted-foreground">Completed in</dt>
-              <dd className="text-right tabular-nums">
-                {durationMs ? (durationMs / 1000).toFixed(2) : "0.00"}s
-              </dd>
-              <dt className="text-muted-foreground">Iterations</dt>
-              <dd className="text-right tabular-nums">{results?.iterations}</dd>
-              <dt className="text-muted-foreground">
-                Avg. positional frequency
-              </dt>
-              <dd className="text-right tabular-nums">
-                {results?.bestScore.toFixed(2)}%
-              </dd>
-            </dl>
+            <Spinner className="size-4" aria-hidden="true" />
+            Generating…
           </>
+        ) : combination ? (
+          "Generate again"
+        ) : (
+          "Generate numbers"
         )}
-      </Card>
+      </Button>
 
-      {combination && (
-        <GeneratedStats
-          combination={combination}
-          bestPatternProb={results?.bestPatternProb ?? null}
-          genOptions={genOptions}
-        />
+      <div className="sr-only" aria-live="polite" role="status">
+        {announcement}
+      </div>
+
+      {!combination && !isGenerating && (
+        <p className="text-sm text-muted-foreground text-center px-2">
+          Click <span className="font-medium">Generate numbers</span> to draw a
+          set tuned to historical patterns.
+        </p>
       )}
 
       {combination && (
-        <MatchResults userMain={userMain} userLucky={userLucky} />
+        <>
+          <div className="flex flex-col gap-y-3">
+            <Card className="p-3 lg:p-4 w-full bg-muted/30">
+              <ol
+                className="flex flex-wrap gap-x-2 gap-y-2 items-center justify-center"
+                aria-label="Generated lottery numbers"
+              >
+                {combination.map((n, index) => {
+                  const isMain = index < MAIN_COUNT;
+                  const score = results?.bestPatternProb?.[index];
+                  const positionLabel = isMain
+                    ? `Main ${index + 1}`
+                    : `Lucky ${index - MAIN_COUNT + 1}`;
+                  return (
+                    <Fragment key={index}>
+                      {index === MAIN_COUNT && (
+                        <li
+                          aria-hidden="true"
+                          className="h-8 w-px bg-border self-center"
+                        />
+                      )}
+                      <li className="flex items-center">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span
+                              tabIndex={0}
+                              className={cn(
+                                "inline-flex items-center justify-center size-10 md:size-11 rounded-full font-semibold text-sm md:text-base select-none",
+                                "ring-1 ring-inset focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                isMain
+                                  ? "bg-sky-100 text-sky-900 ring-sky-200 dark:bg-sky-900/40 dark:text-sky-100 dark:ring-sky-800"
+                                  : "bg-amber-100 text-amber-900 ring-amber-200 dark:bg-amber-900/40 dark:text-amber-100 dark:ring-amber-800",
+                              )}
+                            >
+                              {n}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {positionLabel}
+                            {typeof score === "number" && (
+                              <> — pattern probability {score.toFixed(2)}%</>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
+                      </li>
+                    </Fragment>
+                  );
+                })}
+              </ol>
+            </Card>
+
+            <div className="flex gap-x-2 justify-end">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant={savedEntry ? "default" : "outline"}
+                    size="icon"
+                    onClick={() => handleToggleSave(combination)}
+                    aria-label={
+                      savedEntry
+                        ? "Remove from saved sets"
+                        : "Save to Check Numbers"
+                    }
+                  >
+                    {savedEntry ? <BookmarkCheckIcon /> : <BookmarkIcon />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {savedEntry
+                    ? "Saved — click to remove"
+                    : "Save to Check Numbers"}
+                </TooltipContent>
+              </Tooltip>
+              <CopyToClipboardButton txtToCopy={combination.join(", ")} />
+            </div>
+          </div>
+
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs md:text-sm border-t pt-3 mt-auto">
+            <dt className="text-muted-foreground">Completed in</dt>
+            <dd className="text-right tabular-nums">
+              {durationMs ? (durationMs / 1000).toFixed(2) : "0.00"}s
+            </dd>
+            <dt className="text-muted-foreground">Iterations</dt>
+            <dd className="text-right tabular-nums">{results?.iterations}</dd>
+            <dt className="text-muted-foreground">
+              Avg. positional frequency
+            </dt>
+            <dd className="text-right tabular-nums">
+              {results?.bestScore.toFixed(2)}%
+            </dd>
+          </dl>
+        </>
       )}
-    </div>
+    </Card>
   );
 };
