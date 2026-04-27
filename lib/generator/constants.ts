@@ -27,5 +27,6 @@ export const DEFAULT_OPTIONS: GenerateValidNumberSetOptions = {
   },
   clusterMax: 3,
   clusterGroupSize: 10,
+  maxSameLastDigit: 3,
   debug: false,
 } as const;

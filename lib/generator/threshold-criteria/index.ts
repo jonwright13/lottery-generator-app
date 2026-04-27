@@ -19,6 +19,13 @@ interface MultiplesDistributionResult {
   maxAllowed: number;
 }
 
+interface LastDigitDistribution {
+  /** Total occurrences of each last digit (0..9) across mains, summed over all draws. */
+  perDigitTotals: Record<number, number>;
+  /** Distribution of "largest same-last-digit count within a single draw". */
+  maxRepeatDistribution: Record<number, number>;
+}
+
 export class ThresholdCriteria {
   maxPatternProbs: Record<string, number>;
   oddRange: OddRange;
@@ -30,6 +37,8 @@ export class ThresholdCriteria {
   distribution: DistributionAnalysis[];
   gapDistributionData: GapDistribution;
   positionCounters: Array<Record<string, number>>;
+  lastDigitDistributionData: LastDigitDistribution;
+  maxSameLastDigit: number;
 
   constructor(lotteryNumbers: LotteryTuple[], debug = false) {
     this.maxPatternProbs = this.getMaxPatternProbabilities(
@@ -73,6 +82,45 @@ export class ThresholdCriteria {
     );
 
     this.positionCounters = this.getPositionCounters(lotteryNumbers);
+
+    const { distribution: lastDigitDist, maxAllowed: lastDigitMax } =
+      this.analyzeLastDigitDistribution(lotteryNumbers, true, 95);
+    this.lastDigitDistributionData = lastDigitDist;
+    this.maxSameLastDigit = lastDigitMax;
+  }
+
+  analyzeLastDigitDistribution(
+    lotteryNumbers: LotteryTuple[],
+    mainOnly = true,
+    percentileValue = 95,
+  ): { distribution: LastDigitDistribution; maxAllowed: number } {
+    const perDigitTotals: Record<number, number> = {};
+    for (let d = 0; d <= 9; d++) perDigitTotals[d] = 0;
+    const maxRepeatDistribution: Record<number, number> = {};
+    const maxRepeats: number[] = [];
+    const lengthToCheck = mainOnly ? 5 : lotteryNumbers[0]?.length ?? 0;
+
+    for (const draw of lotteryNumbers) {
+      const perDraw: Record<number, number> = {};
+      for (let i = 0; i < lengthToCheck; i++) {
+        const lastDigit = parseInt(draw[i], 10) % 10;
+        perDraw[lastDigit] = (perDraw[lastDigit] ?? 0) + 1;
+        perDigitTotals[lastDigit] += 1;
+      }
+      const maxRepeat = Math.max(...Object.values(perDraw));
+      maxRepeats.push(maxRepeat);
+      maxRepeatDistribution[maxRepeat] =
+        (maxRepeatDistribution[maxRepeat] ?? 0) + 1;
+    }
+
+    const maxAllowed = maxRepeats.length
+      ? Math.floor(percentile(maxRepeats, percentileValue))
+      : lengthToCheck;
+
+    return {
+      distribution: { perDigitTotals, maxRepeatDistribution },
+      maxAllowed: Math.max(1, maxAllowed),
+    };
   }
 
   private getPositionCounters(

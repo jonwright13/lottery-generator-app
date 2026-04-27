@@ -2,6 +2,7 @@
 
 import { ClusterDistribution } from "@/components/analysis-components/cluster-distribution";
 import { GapDistribution } from "@/components/analysis-components/gap-distribution";
+import { LastDigitDistribution } from "@/components/analysis-components/last-digit-distribution";
 import { NumberFrequency } from "@/components/analysis-components/number-frequency";
 import { OddEvenDistribution } from "@/components/analysis-components/odd-even-distribution";
 import { SumDistribution } from "@/components/analysis-components/sum-distribution";
@@ -141,6 +142,8 @@ const AnalysisContent = () => {
           <GapDistribution analysis={windowedAnalysis} />
 
           <ClusterDistribution pastNumbers={windowedPast} />
+
+          <LastDigitDistribution analysis={windowedAnalysis} />
         </>
       )}
     </div>

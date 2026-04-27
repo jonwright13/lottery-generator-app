@@ -36,6 +36,7 @@ const seededOptions: GenerateValidNumberSetOptions = {
   maxLuckyGapThreshold: analysis.maxLuckyGapThreshold,
   maxMultiplesAllowed: analysis.maxMultiplesAllowed,
   oddRange: analysis.oddRange,
+  maxSameLastDigit: analysis.maxSameLastDigit,
 };
 
 interface DataContextValue {

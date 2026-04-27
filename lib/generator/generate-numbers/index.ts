@@ -22,6 +22,7 @@ const emptyRejectionCounts = (): RejectionCounts => ({
   gap_exceeds_threshold: 0,
   sum_in_range: 0,
   historical_duplicate: 0,
+  last_digit_repeat: 0,
 });
 
 function buildPositionCounters(
@@ -60,6 +61,7 @@ export function generateValidNumberSet(
     maxMultiplesAllowed = DEFAULT_OPTIONS.maxMultiplesAllowed,
     clusterMax = DEFAULT_OPTIONS.clusterMax,
     clusterGroupSize = DEFAULT_OPTIONS.clusterGroupSize,
+    maxSameLastDigit = DEFAULT_OPTIONS.maxSameLastDigit,
     debug = DEFAULT_OPTIONS.debug,
   } = options;
 
@@ -79,6 +81,7 @@ export function generateValidNumberSet(
     clusterMax,
     clusterGroupSize,
     maxMain,
+    maxSameLastDigit,
   };
 
   const rejections = emptyRejectionCounts();

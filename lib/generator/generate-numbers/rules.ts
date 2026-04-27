@@ -8,6 +8,7 @@ import {
   countMultiples,
   isSumInRange,
   maxGapExceedsThreshold,
+  maxSameLastDigitCount,
 } from "./utils";
 
 export type RejectionReason = keyof RejectionCounts;
@@ -23,6 +24,7 @@ export type RuleOptions = Pick<
   | "clusterMax"
   | "clusterGroupSize"
   | "maxMain"
+  | "maxSameLastDigit"
 >;
 
 export type Rule = (
@@ -62,6 +64,10 @@ export const mainRules: Rule[] = [
       ? "cluster_count"
       : null;
   },
+  (nums, { maxSameLastDigit }) =>
+    maxSameLastDigitCount(nums) > maxSameLastDigit
+      ? "last_digit_repeat"
+      : null,
 ];
 
 export const luckyRules: Rule[] = [
