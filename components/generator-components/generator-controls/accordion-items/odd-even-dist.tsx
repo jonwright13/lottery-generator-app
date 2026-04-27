@@ -1,3 +1,5 @@
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -6,7 +8,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { type DistributionAnalysis } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { TableItemProps } from "../types";
 
@@ -15,36 +16,55 @@ export const OddEvenDistItem = ({
   genOptions,
   updateOptions,
 }: TableItemProps) => {
-  const handleOddRangeChange = (r: DistributionAnalysis) => {
+  const distribution = analysis?.distribution ?? [];
+  const maxOdd = distribution.length > 0 ? distribution.length - 1 : 5;
+  const [minOdd, maxOddRange] = genOptions.oddRange;
+
+  const handleBoundChange = (
+    bound: "min" | "max",
+    raw: string,
+  ) => {
     if (!analysis) return;
-    if (
-      r.oddCount === genOptions.oddRange[0] ||
-      r.oddCount === genOptions.oddRange[1]
-    )
-      return;
-
-    const index = analysis.distribution.findIndex(
-      (row) => row.label === r.label,
-    );
-    const middleIndex = analysis.distribution.length / 2;
-
-    const nextRange: [number, number] = [...genOptions.oddRange];
-    if (index < middleIndex) {
-      nextRange[0] = r.oddCount;
-    } else {
-      nextRange[1] = r.oddCount;
-    }
-
-    updateOptions("oddRange", nextRange);
+    const value = Number(raw);
+    if (Number.isNaN(value)) return;
+    const clamped = Math.max(0, Math.min(maxOdd, value));
+    const next: [number, number] =
+      bound === "min"
+        ? [Math.min(clamped, maxOddRange), maxOddRange]
+        : [minOdd, Math.max(clamped, minOdd)];
+    updateOptions("oddRange", next);
   };
 
   return (
     <>
       <p>
-        This table breaks down historical draws by how many odd versus even
-        numbers they contain. Click a row to adjust the min/max range used in
-        generation.
+        Set the allowed range of odd numbers per generated set. Rows in the
+        selected range are highlighted.
       </p>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 items-center">
+        <Label htmlFor="oddRange-min">Min odd count</Label>
+        <Input
+          id="oddRange-min"
+          name="oddRangeMin"
+          type="number"
+          min={0}
+          max={maxOdd}
+          value={minOdd}
+          onChange={(e) => handleBoundChange("min", e.target.value)}
+          onFocus={(e) => e.target.select()}
+        />
+        <Label htmlFor="oddRange-max">Max odd count</Label>
+        <Input
+          id="oddRange-max"
+          name="oddRangeMax"
+          type="number"
+          min={0}
+          max={maxOdd}
+          value={maxOddRange}
+          onChange={(e) => handleBoundChange("max", e.target.value)}
+          onFocus={(e) => e.target.select()}
+        />
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
@@ -56,21 +76,23 @@ export const OddEvenDistItem = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {analysis?.distribution.map((r, index) => (
-            <TableRow
-              key={index}
-              className={cn(
-                "cursor-pointer hover:bg-slate-300",
-                r.oddCount === genOptions.oddRange[0] && "bg-secondary",
-                r.oddCount === genOptions.oddRange[1] && "bg-secondary",
-              )}
-              onClick={() => handleOddRangeChange(r)}
-            >
-              <TableCell>{r.label}</TableCell>
-              <TableCell className="text-center">{r.count}</TableCell>
-              <TableCell className="text-center">{r.pct.toFixed(2)}%</TableCell>
-            </TableRow>
-          ))}
+          {distribution.map((r, index) => {
+            const inRange =
+              r.oddCount >= minOdd && r.oddCount <= maxOddRange;
+            return (
+              <TableRow
+                key={index}
+                className={cn(inRange && "bg-secondary")}
+                aria-selected={inRange}
+              >
+                <TableCell>{r.label}</TableCell>
+                <TableCell className="text-center">{r.count}</TableCell>
+                <TableCell className="text-center">
+                  {r.pct.toFixed(2)}%
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </>
