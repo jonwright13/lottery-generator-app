@@ -10,7 +10,7 @@ import {
   type GenerateValidNumberSetResult,
   type LotteryTuple,
 } from "@/lib/generator";
-import { BookmarkIcon } from "lucide-react";
+import { BookmarkCheckIcon, BookmarkIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { WorkerResponse } from "@/workers/generateNumbers.worker";
@@ -34,13 +34,24 @@ export const GeneratorContainer = ({
   const [durationMs, setDurationMs] = useState<number | null>(null);
 
   const workerRef = useRef<Worker | null>(null);
-  const { add: saveNumbers } = useSavedNumbers();
+  const { list: savedList, add: saveNumbers, remove: removeSaved } =
+    useSavedNumbers();
 
-  const handleSave = (combination: LotteryTuple) => {
-    saveNumbers(combination);
-    toast.success("Saved", {
-      description: "Find it on the Check Numbers page.",
-    });
+  const currentKey = results?.bestCombination?.join(",") ?? null;
+  const savedEntry = currentKey
+    ? savedList.find((s) => s.numbers.join(",") === currentKey)
+    : undefined;
+
+  const handleToggleSave = (combination: LotteryTuple) => {
+    if (savedEntry) {
+      removeSaved(savedEntry.id);
+      toast("Removed from saved");
+    } else {
+      saveNumbers(combination);
+      toast.success("Saved", {
+        description: "Find it on the Check Numbers page.",
+      });
+    }
   };
 
   useEffect(() => {
@@ -136,11 +147,15 @@ export const GeneratorContainer = ({
               {results.bestCombination && (
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={() => handleSave(results.bestCombination!)}
-                  title="Save to Check Numbers"
+                  variant={savedEntry ? "default" : "outline"}
+                  onClick={() => handleToggleSave(results.bestCombination!)}
+                  title={
+                    savedEntry
+                      ? "Saved — click to remove"
+                      : "Save to Check Numbers"
+                  }
                 >
-                  <BookmarkIcon />
+                  {savedEntry ? <BookmarkCheckIcon /> : <BookmarkIcon />}
                 </Button>
               )}
               <CopyToClipboardButton
