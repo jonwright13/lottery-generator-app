@@ -9,6 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useData } from "@/context/useDataProvider";
 import { useSavedNumbers } from "@/hooks/use-saved-numbers";
 import {
   type GenerateValidNumberSetResult,
@@ -26,14 +27,15 @@ interface Props {
   onGenerate: () => void;
 }
 
-const MAIN_COUNT = 5;
-
 export const GeneratorContainer = ({
   isGenerating,
   results,
   durationMs,
   onGenerate,
 }: Props) => {
+  const { game } = useData();
+  const mainCount = game.main.count;
+  const bonusLabel = game.bonus.label;
   const {
     list: savedList,
     add: saveNumbers,
@@ -61,7 +63,7 @@ export const GeneratorContainer = ({
   const announcement = isGenerating
     ? "Generating numbers"
     : combination
-      ? `Generated numbers: main ${combination.slice(0, MAIN_COUNT).join(", ")}; lucky ${combination.slice(MAIN_COUNT).join(", ")}.`
+      ? `Generated numbers: main ${combination.slice(0, mainCount).join(", ")}; ${bonusLabel.toLowerCase()} ${combination.slice(mainCount).join(", ")}.`
       : "";
 
   return (
@@ -108,14 +110,14 @@ export const GeneratorContainer = ({
                 aria-label="Generated lottery numbers"
               >
                 {combination.map((n, index) => {
-                  const isMain = index < MAIN_COUNT;
+                  const isMain = index < mainCount;
                   const score = results?.bestPatternProb?.[index];
                   const positionLabel = isMain
                     ? `Main ${index + 1}`
-                    : `Lucky ${index - MAIN_COUNT + 1}`;
+                    : `${bonusLabel} ${index - mainCount + 1}`;
                   return (
                     <Fragment key={index}>
-                      {index === MAIN_COUNT && (
+                      {index === mainCount && (
                         <li
                           aria-hidden="true"
                           className="h-8 w-px bg-border self-center"

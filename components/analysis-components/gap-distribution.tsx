@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { HelpPopover } from "@/components/ui/help-popover";
+import { useData } from "@/context/useDataProvider";
 import type { ThresholdCriteria } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
@@ -110,6 +111,9 @@ const GapBars = ({
 };
 
 export const GapDistribution = ({ analysis }: Props) => {
+  const { game } = useData();
+  const bonusLabel = game.bonus.label;
+  const showBonus = game.bonus.count > 1;
   const { mainBars, luckyBars } = useMemo(() => {
     const mainCounts = mergeCounters(
       analysis.gapDistributionData.main.gapCounters,
@@ -150,8 +154,11 @@ export const GapDistribution = ({ analysis }: Props) => {
           <p>
             After sorting each draw, look at the difference between each
             adjacent pair (e.g. 4, 9, 17, 22, 38 → gaps of 5, 8, 5, 16). The
-            chart shows how often each gap size has appeared, separately for
-            the main numbers and for the two lucky numbers.
+            chart shows how often each gap size has appeared
+            {showBonus
+              ? `, separately for the main numbers and for the ${bonusLabel.toLowerCase()} numbers`
+              : " for the main numbers"}
+            .
           </p>
           <p>
             <strong>Why it matters:</strong> very large single gaps (one
@@ -179,21 +186,23 @@ export const GapDistribution = ({ analysis }: Props) => {
         />
       </div>
 
-      <div className="flex flex-col gap-y-2">
-        <div className="flex items-baseline justify-between">
-          <h3 className="text-sm font-medium text-muted-foreground">
-            Lucky numbers
-          </h3>
-          <span className="text-xs text-muted-foreground tabular-nums">
-            threshold: {analysis.maxLuckyGapThreshold}
-          </span>
+      {showBonus && (
+        <div className="flex flex-col gap-y-2">
+          <div className="flex items-baseline justify-between">
+            <h3 className="text-sm font-medium text-muted-foreground">
+              {bonusLabel} numbers
+            </h3>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              threshold: {analysis.maxLuckyGapThreshold}
+            </span>
+          </div>
+          <GapBars
+            bars={luckyBars}
+            threshold={analysis.maxLuckyGapThreshold}
+            ariaLabel={`${bonusLabel} number gap distribution`}
+          />
         </div>
-        <GapBars
-          bars={luckyBars}
-          threshold={analysis.maxLuckyGapThreshold}
-          ariaLabel="Lucky number gap distribution"
-        />
-      </div>
+      )}
     </Card>
   );
 };

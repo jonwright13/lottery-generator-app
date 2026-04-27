@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { useData } from "@/context/useDataProvider";
 import type {
   GenerateValidNumberSetOptions,
   LotteryTuple,
@@ -16,8 +17,6 @@ interface Props {
   previousDraw: LotteryTuple | null;
   pairData: ThresholdCriteria["pairCoOccurrenceData"];
 }
-
-const MAIN_COUNT = 5;
 
 interface ClusterBar {
   start: number;
@@ -46,9 +45,13 @@ export const GeneratedStats = ({
   previousDraw,
   pairData,
 }: Props) => {
+  const { game } = useData();
+  const mainCount = game.main.count;
+  const bonusLabel = game.bonus.label;
+
   const stats = useMemo(() => {
-    const main = combination.slice(0, MAIN_COUNT).map((n) => parseInt(n, 10));
-    const lucky = combination.slice(MAIN_COUNT).map((n) => parseInt(n, 10));
+    const main = combination.slice(0, mainCount).map((n) => parseInt(n, 10));
+    const lucky = combination.slice(mainCount).map((n) => parseInt(n, 10));
     const sortedMain = [...main].sort((a, b) => a - b);
     const sortedLucky = [...lucky].sort((a, b) => a - b);
 
@@ -84,8 +87,8 @@ export const GeneratedStats = ({
 
     let previousOverlap = 0;
     if (previousDraw) {
-      const prev = new Set(previousDraw.slice(0, MAIN_COUNT));
-      for (const s of combination.slice(0, MAIN_COUNT)) {
+      const prev = new Set(previousDraw.slice(0, mainCount));
+      for (const s of combination.slice(0, mainCount)) {
         if (prev.has(s)) previousOverlap += 1;
       }
     }
@@ -134,7 +137,7 @@ export const GeneratedStats = ({
       pairCohesionPct,
       pairMeanPct,
     };
-  }, [combination, genOptions, previousDraw, pairData]);
+  }, [combination, genOptions, previousDraw, pairData, mainCount]);
 
   const sumOk = stats.sum >= genOptions.sumMin && stats.sum <= genOptions.sumMax;
   const oddOk =
@@ -149,15 +152,13 @@ export const GeneratedStats = ({
   const ap3Ok = stats.ap3Diff === null;
   const pairOk = stats.pairCohesionPct >= stats.pairMeanPct;
 
-  const positionLabels = [
-    "Main 1",
-    "Main 2",
-    "Main 3",
-    "Main 4",
-    "Main 5",
-    "Lucky 1",
-    "Lucky 2",
-  ];
+  const positionLabels = useMemo(() => {
+    const labels: string[] = [];
+    for (let i = 1; i <= mainCount; i++) labels.push(`Main ${i}`);
+    for (let i = 1; i <= game.bonus.count; i++)
+      labels.push(`${bonusLabel} ${i}`);
+    return labels;
+  }, [mainCount, game.bonus.count, bonusLabel]);
   const maxProb = Math.max(...(bestPatternProb ?? [0]), 1);
 
   return (
@@ -178,7 +179,7 @@ export const GeneratedStats = ({
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
             {bestPatternProb.map((p, i) => {
               const widthPct = (p / maxProb) * 100;
-              const isMain = i < MAIN_COUNT;
+              const isMain = i < mainCount;
               return (
                 <li key={i} className="flex items-center gap-x-2">
                   <span className="text-xs text-muted-foreground w-14 shrink-0">
@@ -227,7 +228,9 @@ export const GeneratedStats = ({
           {mainGapOk ? "≤" : ">"} {genOptions.maxMainGapThreshold}
         </dd>
 
-        <dt className="text-muted-foreground">Max gap (lucky)</dt>
+        <dt className="text-muted-foreground">
+          Max gap ({bonusLabel.toLowerCase()})
+        </dt>
         <dd className="text-right tabular-nums">{stats.maxLuckyGap}</dd>
         <dd className={cn("text-right tabular-nums", inBandClass(luckyGapOk))}>
           {luckyGapOk ? "≤" : ">"} {genOptions.maxLuckyGapThreshold}

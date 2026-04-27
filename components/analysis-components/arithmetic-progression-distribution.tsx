@@ -46,10 +46,10 @@ export const ArithmeticProgressionDistribution = ({ analysis }: Props) => {
         <div className="flex flex-col gap-y-1">
           <h2 className="text-lg font-medium">Arithmetic progression (AP-3)</h2>
           <p className="text-xs text-muted-foreground">
-            How often three of the five main numbers form an arithmetic
-            progression (e.g. 5, 10, 15) with common difference d ≥ 2.
-            Generated sets are rejected when this pattern is present; d = 1
-            is already covered by the consecutive-run rule.
+            How often three of the main numbers form an arithmetic progression
+            (e.g. 5, 10, 15) with common difference d ≥ 2. Generated sets are
+            rejected when this pattern is present; d = 1 is already covered
+            by the consecutive-run rule.
           </p>
         </div>
         <HelpPopover title="Arithmetic progression (AP-3)">
@@ -57,7 +57,7 @@ export const ArithmeticProgressionDistribution = ({ analysis }: Props) => {
             An arithmetic progression of three is any trio of numbers with a
             constant step between them: 5-10-15 (step 5), 7-13-19 (step 6),
             and so on. We scan every historical draw for any AP-3 hidden in
-            the 5 main numbers and count how often each step size appears.
+            the main numbers and count how often each step size appears.
           </p>
           <p>
             <strong>Why it matters:</strong> these patterns occur far less

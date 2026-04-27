@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { ThresholdCriteria } from "@/lib/generator";
-import { FIELDS } from "@/constants";
+import type { FieldDef } from "@/constants";
+import { useData } from "@/context/useDataProvider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HelpPopover } from "@/components/ui/help-popover";
@@ -19,7 +20,7 @@ interface FieldGroup {
   max: number;
 }
 
-function groupFieldsByMax(fields: typeof FIELDS): FieldGroup[] {
+function groupFieldsByMax(fields: FieldDef[]): FieldGroup[] {
   const groups: FieldGroup[] = [];
   fields.forEach((f, idx) => {
     const last = groups[groups.length - 1];
@@ -34,7 +35,8 @@ function groupFieldsByMax(fields: typeof FIELDS): FieldGroup[] {
 }
 
 export const Heatmap = ({ analysis }: Props) => {
-  const groups = groupFieldsByMax(FIELDS);
+  const { game, fields } = useData();
+  const groups = groupFieldsByMax(fields);
   const [usePct, setUsePct] = useState(true);
 
   return (
@@ -78,10 +80,12 @@ export const Heatmap = ({ analysis }: Props) => {
           </div>
           <HelpPopover title="Distribution of numbers by draw position">
             <p>
-              Before display, every historical draw has its 5 main numbers
-              sorted smallest to largest, plus its 2 lucky numbers. Each row of
-              the grid is one of those slots. Darker cells mean that number
-              landed in that slot more often.
+              Before display, every historical draw has its {game.main.count}{" "}
+              main numbers sorted smallest to largest, plus its{" "}
+              {game.bonus.count} {game.bonus.label.toLowerCase()} number
+              {game.bonus.count === 1 ? "" : "s"}. Each row of the grid is one
+              of those slots. Darker cells mean that number landed in that slot
+              more often.
             </p>
             <p>
               <strong>Why it matters:</strong> the lowest of the five mains is

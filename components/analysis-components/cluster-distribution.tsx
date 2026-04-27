@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { HelpPopover } from "@/components/ui/help-popover";
+import { useData } from "@/context/useDataProvider";
 import { DEFAULT_OPTIONS, type LotteryTuple } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
@@ -10,10 +11,8 @@ interface Props {
   pastNumbers: LotteryTuple[];
 }
 
-const MAIN_COUNT = 5;
 const CLUSTER_MAX = DEFAULT_OPTIONS.clusterMax;
 const CLUSTER_GROUP_SIZE = DEFAULT_OPTIONS.clusterGroupSize;
-const MAIN_MAX = DEFAULT_OPTIONS.maxMain;
 
 interface BandRow {
   start: number;
@@ -31,14 +30,16 @@ interface MaxFillBar {
 
 const computeBandStats = (
   pastNumbers: LotteryTuple[],
+  mainCount: number,
+  mainMax: number,
 ): { bands: BandRow[]; maxFills: MaxFillBar[]; total: number } => {
-  const numBands = Math.ceil(MAIN_MAX / CLUSTER_GROUP_SIZE);
+  const numBands = Math.ceil(mainMax / CLUSTER_GROUP_SIZE);
   const totals = new Array<number>(numBands).fill(0);
   const maxFillCounts: Record<number, number> = {};
 
   for (const draw of pastNumbers) {
     const perBand = new Array<number>(numBands).fill(0);
-    for (let i = 0; i < MAIN_COUNT; i++) {
+    for (let i = 0; i < mainCount; i++) {
       const n = parseInt(draw[i], 10);
       const idx = Math.floor((n - 1) / CLUSTER_GROUP_SIZE);
       if (idx >= 0 && idx < numBands) {
@@ -55,7 +56,7 @@ const computeBandStats = (
     const start = i * CLUSTER_GROUP_SIZE + 1;
     return {
       start,
-      end: Math.min((i + 1) * CLUSTER_GROUP_SIZE, MAIN_MAX),
+      end: Math.min((i + 1) * CLUSTER_GROUP_SIZE, mainMax),
       totalCount: count,
       meanPerDraw: total > 0 ? count / total : 0,
     };
@@ -63,7 +64,7 @@ const computeBandStats = (
 
   const observedMaxFill = Math.max(
     ...Object.keys(maxFillCounts).map((k) => parseInt(k, 10)),
-    MAIN_COUNT,
+    mainCount,
   );
   const maxFills: MaxFillBar[] = [];
   for (let f = 1; f <= observedMaxFill; f++) {
@@ -80,9 +81,12 @@ const computeBandStats = (
 };
 
 export const ClusterDistribution = ({ pastNumbers }: Props) => {
+  const { game } = useData();
+  const mainCount = game.main.count;
+  const mainMax = game.main.max;
   const { bands, maxFills, total } = useMemo(
-    () => computeBandStats(pastNumbers),
-    [pastNumbers],
+    () => computeBandStats(pastNumbers, mainCount, mainMax),
+    [pastNumbers, mainCount, mainMax],
   );
 
   const meanMax = Math.max(...bands.map((b) => b.meanPerDraw), 0.01);
@@ -97,9 +101,10 @@ export const ClusterDistribution = ({ pastNumbers }: Props) => {
         <div className="flex flex-col gap-y-1">
           <h2 className="text-lg font-medium">Decade-band distribution</h2>
           <p className="text-xs text-muted-foreground">
-            How the 5 main numbers spread across {bands.length} bands of{" "}
-            {CLUSTER_GROUP_SIZE} (1–{CLUSTER_GROUP_SIZE}, …). The cluster rule
-            rejects sets with more than {CLUSTER_MAX} numbers in any one band.
+            How the {mainCount} main numbers spread across {bands.length}{" "}
+            bands of {CLUSTER_GROUP_SIZE} (1–{CLUSTER_GROUP_SIZE}, …). The
+            cluster rule rejects sets with more than {CLUSTER_MAX} numbers in
+            any one band.
           </p>
         </div>
         <HelpPopover title="Decade-band distribution">
@@ -107,8 +112,8 @@ export const ClusterDistribution = ({ pastNumbers }: Props) => {
             The pool is split into bands of {CLUSTER_GROUP_SIZE} (1–
             {CLUSTER_GROUP_SIZE}, {CLUSTER_GROUP_SIZE + 1}–
             {CLUSTER_GROUP_SIZE * 2}, etc.). For each draw we look at how
-            many of the 5 mains fall into each band — most draws are spread
-            across several bands rather than clumped in one.
+            many of the {mainCount} mains fall into each band — most draws
+            are spread across several bands rather than clumped in one.
           </p>
           <p>
             <strong>Why it matters:</strong> sets that cluster heavily into

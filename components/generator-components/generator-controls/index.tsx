@@ -7,6 +7,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card } from "@/components/ui/card";
+import { useData } from "@/context/useDataProvider";
 import {
   ThresholdCriteria,
   type GenerateValidNumberSetOptions,
@@ -51,6 +52,9 @@ export const GeneratorControls = ({
   genOptions,
   updateOptions,
 }: Props) => {
+  const { game } = useData();
+  const bonusLabel = game.bonus.label.toLowerCase();
+  const showBonusGap = game.bonus.count > 1;
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!analysis) return;
     // Inputs in this surface only drive numeric option keys.
@@ -197,7 +201,11 @@ export const GeneratorControls = ({
           <AccordionTrigger>
             <TriggerRow
               label="Gap Distribution"
-              value={`main ≤ ${genOptions.maxMainGapThreshold}, lucky ≤ ${genOptions.maxLuckyGapThreshold}`}
+              value={
+                showBonusGap
+                  ? `main ≤ ${genOptions.maxMainGapThreshold}, ${bonusLabel} ≤ ${genOptions.maxLuckyGapThreshold}`
+                  : `main ≤ ${genOptions.maxMainGapThreshold}`
+              }
             />
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">

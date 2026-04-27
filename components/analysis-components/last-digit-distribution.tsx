@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { HelpPopover } from "@/components/ui/help-popover";
+import { useData } from "@/context/useDataProvider";
 import type { ThresholdCriteria } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
@@ -22,9 +23,10 @@ interface RepeatRow {
   inBand: boolean;
 }
 
-const MAIN_COUNT = 5;
-
 export const LastDigitDistribution = ({ analysis }: Props) => {
+  const { game } = useData();
+  const mainCount = game.main.count;
+
   const { digitBars, repeatRows, total } = useMemo(() => {
     const totals = analysis.lastDigitDistributionData.perDigitTotals;
     const repeats = analysis.lastDigitDistributionData.maxRepeatDistribution;
@@ -36,7 +38,7 @@ export const LastDigitDistribution = ({ analysis }: Props) => {
 
     const total = Object.values(repeats).reduce((a, b) => a + b, 0);
     const repeatRows: RepeatRow[] = [];
-    for (let r = 1; r <= MAIN_COUNT; r++) {
+    for (let r = 1; r <= mainCount; r++) {
       const count = repeats[r] ?? 0;
       repeatRows.push({
         repeat: r,
@@ -47,7 +49,7 @@ export const LastDigitDistribution = ({ analysis }: Props) => {
     }
 
     return { digitBars, repeatRows, total };
-  }, [analysis.lastDigitDistributionData, analysis.maxSameLastDigit]);
+  }, [analysis.lastDigitDistributionData, analysis.maxSameLastDigit, mainCount]);
 
   const digitMax = Math.max(...digitBars.map((d) => d.count), 1);
   const repeatMaxPct = Math.max(...repeatRows.map((r) => r.pct), 1);
@@ -61,10 +63,10 @@ export const LastDigitDistribution = ({ analysis }: Props) => {
         <div className="flex flex-col gap-y-1">
           <h2 className="text-lg font-medium">Last-digit distribution</h2>
           <p className="text-xs text-muted-foreground">
-            How the last digits (0–9) of the 5 main numbers spread across each
-            draw. Highlighted bars stay at or under the 95th-percentile cap of
-            {" "}
-            {analysis.maxSameLastDigit} same-last-digit numbers per draw.
+            How the last digits (0–9) of the {mainCount} main numbers spread
+            across each draw. Highlighted bars stay at or under the
+            95th-percentile cap of {analysis.maxSameLastDigit}{" "}
+            same-last-digit numbers per draw.
           </p>
         </div>
         <HelpPopover title="Last-digit distribution">

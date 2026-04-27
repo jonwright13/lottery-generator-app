@@ -25,7 +25,7 @@ function loadFromStorage(): SavedSet[] {
         typeof (s as SavedSet).id === "string" &&
         typeof (s as SavedSet).savedAt === "string" &&
         Array.isArray((s as SavedSet).numbers) &&
-        (s as SavedSet).numbers.length === 7,
+        (s as SavedSet).numbers.length > 0,
     );
   } catch {
     return [];

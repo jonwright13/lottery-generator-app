@@ -1,12 +1,12 @@
-export type LotteryTuple = [
-  string,
-  string,
-  string,
-  string,
-  string,
-  string,
-  string,
-];
+/**
+ * A single historical draw, flat: `[...mains, ...bonuses]`.
+ *
+ * Length is per-game (`main.count + bonus.count`) — the type is just `string[]`
+ * because TypeScript can't easily express "tuple of length N where N is read
+ * from runtime config". Consumers slice using the active GameConfig's
+ * `main.count` / `bonus.count` rather than hard-coded constants.
+ */
+export type LotteryTuple = string[];
 
 export type OddRange = [number, number];
 

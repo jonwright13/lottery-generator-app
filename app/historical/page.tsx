@@ -8,11 +8,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FIELDS } from "@/constants";
 import { useData } from "@/context/useDataProvider";
 
 const ViewHistoricalPage = () => {
-  const { pastNumbers, updatedAt, dates } = useData();
+  const { pastNumbers, updatedAt, dates, fields } = useData();
 
   return (
     <div className="flex flex-col gap-y-4 w-full">
@@ -24,7 +23,7 @@ const ViewHistoricalPage = () => {
         <TableHeader>
           <TableRow>
             <TableHead className="w-40">Date</TableHead>
-            {FIELDS.map((f) => (
+            {fields.map((f) => (
               <TableHead key={f.name}>{f.label}</TableHead>
             ))}
           </TableRow>

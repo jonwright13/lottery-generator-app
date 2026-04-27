@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { countMatchesByTier } from "./lottery-match";
 import type { LotteryTuple } from "./generator";
+import { MERSEYWORLD_SYNTHETIC } from "@/lib/games/merseyworld-synthetic";
+
+const GAME = MERSEYWORLD_SYNTHETIC;
 
 const draw = (
   ...nums: [string, string, string, string, string, string, string]
@@ -13,6 +16,7 @@ describe("countMatchesByTier", () => {
       ["01", "02", "03", "04", "05"],
       ["06", "07"],
       draws,
+      GAME,
     );
     expect(tiers[0]).toEqual({
       mainHits: 5,
@@ -34,6 +38,7 @@ describe("countMatchesByTier", () => {
       ["01", "02", "03", "04", "05"],
       ["06", "07"],
       draws,
+      GAME,
     );
     const find = (m: number, l: number) =>
       tiers.find((t) => t.mainHits === m && t.luckyHits === l);
@@ -50,6 +55,7 @@ describe("countMatchesByTier", () => {
       ["01", "02", "03", "04", "05"],
       ["06", "07"],
       draws,
+      GAME,
     );
     expect(tiers).toContainEqual({
       mainHits: 5,
@@ -65,6 +71,7 @@ describe("countMatchesByTier", () => {
       ["01", "02", "03", "04", "05"],
       ["06", "07"],
       draws,
+      GAME,
     );
     // exactly one 5+2; every other tier should be 0
     const nonZero = tiers.filter((t) => t.draws > 0);
@@ -83,6 +90,7 @@ describe("countMatchesByTier", () => {
       ["01", "02", "03", "04", "05"],
       ["06", "07"],
       draws,
+      GAME,
     );
     const get = (m: number, l: number) =>
       tiers.find((t) => t.mainHits === m && t.luckyHits === l)?.draws ?? null;
@@ -94,7 +102,7 @@ describe("countMatchesByTier", () => {
   });
 
   it("returns the canonical 9 tiers in descending significance order", () => {
-    const tiers = countMatchesByTier([], [], []);
+    const tiers = countMatchesByTier([], [], [], GAME);
     expect(tiers.map((t) => `${t.mainHits}+${t.luckyHits}`)).toEqual([
       "5+2",
       "5+1",
@@ -113,6 +121,7 @@ describe("countMatchesByTier", () => {
       ["01", "02", "03", "04", "05"],
       ["06", "07"],
       [],
+      GAME,
     );
     for (const t of tiers) expect(t.draws).toBe(0);
   });

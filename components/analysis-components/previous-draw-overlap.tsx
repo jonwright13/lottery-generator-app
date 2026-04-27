@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { HelpPopover } from "@/components/ui/help-popover";
+import { useData } from "@/context/useDataProvider";
 import type { ThresholdCriteria } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
@@ -17,16 +18,17 @@ interface OverlapRow {
   inBand: boolean;
 }
 
-const MAIN_COUNT = 5;
-
 export const PreviousDrawOverlap = ({ analysis }: Props) => {
+  const { game } = useData();
+  const mainCount = game.main.count;
+
   const { rows, total } = useMemo(() => {
     const dist = analysis.previousDrawOverlapData.overlapDistribution;
     const total = analysis.previousDrawOverlapData.pairsAnalysed;
     const cap = analysis.maxPreviousDrawOverlap;
 
     const rows: OverlapRow[] = [];
-    for (let k = 0; k <= MAIN_COUNT; k++) {
+    for (let k = 0; k <= mainCount; k++) {
       const count = dist[k] ?? 0;
       rows.push({
         overlap: k,
@@ -36,7 +38,7 @@ export const PreviousDrawOverlap = ({ analysis }: Props) => {
       });
     }
     return { rows, total };
-  }, [analysis.previousDrawOverlapData, analysis.maxPreviousDrawOverlap]);
+  }, [analysis.previousDrawOverlapData, analysis.maxPreviousDrawOverlap, mainCount]);
 
   const maxPct = Math.max(...rows.map((r) => r.pct), 1);
   const withinCapPct = rows
@@ -57,8 +59,8 @@ export const PreviousDrawOverlap = ({ analysis }: Props) => {
         <HelpPopover title="Overlap with previous draw">
           <p>
             For every consecutive pair of historical draws, we count how many
-            of the 5 main numbers repeat from one to the next. Most of the
-            time this is 0 or 1; high overlaps are rare even though
+            of the {mainCount} main numbers repeat from one to the next. Most
+            of the time this is 0 or 1; high overlaps are rare even though
             individual balls are equally likely each time.
           </p>
           <p>
