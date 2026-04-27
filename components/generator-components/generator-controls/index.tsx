@@ -33,6 +33,15 @@ type NumericOptionKey = {
     : never;
 }[keyof GenerateValidNumberSetOptions];
 
+const TriggerRow = ({ label, value }: { label: string; value: string }) => (
+  <span className="flex w-full items-center justify-between gap-3 pr-2">
+    <span>{label}</span>
+    <span className="text-muted-foreground tabular-nums font-normal text-xs">
+      {value}
+    </span>
+  </span>
+);
+
 export const GeneratorControls = ({
   analysis,
   genOptions,
@@ -50,7 +59,12 @@ export const GeneratorControls = ({
       <h3 className="text-lg font-semibold">Controls</h3>
       <Accordion type="single" collapsible>
         <AccordionItem value="max-iterations">
-          <AccordionTrigger>Maximum Iterations</AccordionTrigger>
+          <AccordionTrigger>
+            <TriggerRow
+              label="Maximum Iterations"
+              value={genOptions.maxIterations.toLocaleString()}
+            />
+          </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
             <MaxIterationsItem
               genOptions={genOptions}
@@ -60,7 +74,10 @@ export const GeneratorControls = ({
         </AccordionItem>
         <AccordionItem value="score">
           <AccordionTrigger>
-            Minimum Positional Frequency Score
+            <TriggerRow
+              label="Minimum Positional Frequency Score"
+              value={`${genOptions.minScore}%`}
+            />
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
             <PositionalFrequencyScoreItem
@@ -70,7 +87,12 @@ export const GeneratorControls = ({
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="min-max-sum">
-          <AccordionTrigger>Min/Max Sum</AccordionTrigger>
+          <AccordionTrigger>
+            <TriggerRow
+              label="Min/Max Sum"
+              value={`${genOptions.sumMin}–${genOptions.sumMax}`}
+            />
+          </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
             <MinMaxSumItem
               genOptions={genOptions}
@@ -79,7 +101,12 @@ export const GeneratorControls = ({
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="cluster-max">
-          <AccordionTrigger>Cluster Max</AccordionTrigger>
+          <AccordionTrigger>
+            <TriggerRow
+              label="Cluster Max"
+              value={String(genOptions.clusterMax)}
+            />
+          </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
             <ClusterMaxItem
               genOptions={genOptions}
@@ -88,7 +115,12 @@ export const GeneratorControls = ({
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="odd-even-dist">
-          <AccordionTrigger>Odd/Even Distribution</AccordionTrigger>
+          <AccordionTrigger>
+            <TriggerRow
+              label="Odd/Even Distribution"
+              value={`${genOptions.oddRange[0]}–${genOptions.oddRange[1]} odd`}
+            />
+          </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
             <OddEvenDistItem
               analysis={analysis}
@@ -98,7 +130,12 @@ export const GeneratorControls = ({
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="gap-dist">
-          <AccordionTrigger>Gap Distribution</AccordionTrigger>
+          <AccordionTrigger>
+            <TriggerRow
+              label="Gap Distribution"
+              value={`main ≤ ${genOptions.maxMainGapThreshold}, lucky ≤ ${genOptions.maxLuckyGapThreshold}`}
+            />
+          </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
             <GapDistributionItem
               analysis={analysis}
