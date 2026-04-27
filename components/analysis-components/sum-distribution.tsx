@@ -72,8 +72,8 @@ export const SumDistribution = ({ pastNumbers, analysis }: Props) => {
         <h2 className="text-lg font-medium">Sum of main numbers</h2>
         <p className="text-xs text-muted-foreground">
           Distribution of the sum of each draw&apos;s 5 main numbers. Highlighted
-          buckets fall inside the typical 15th–85th percentile band ({analysis.sumMin}–
-          {analysis.sumMax}) the generator targets by default.
+          buckets fall inside the 15th–85th percentile band ({analysis.sumMin}–
+          {analysis.sumMax}).
         </p>
       </div>
 
@@ -121,7 +121,7 @@ export const SumDistribution = ({ pastNumbers, analysis }: Props) => {
         <dd className="text-right tabular-nums">{mean.toFixed(1)}</dd>
         <dt className="text-muted-foreground">Median</dt>
         <dd className="text-right tabular-nums">{median}</dd>
-        <dt className="text-muted-foreground">Generator band (15th–85th %ile)</dt>
+        <dt className="text-muted-foreground">15th–85th %ile band</dt>
         <dd className="text-right tabular-nums">
           {analysis.sumMin}–{analysis.sumMax}
         </dd>

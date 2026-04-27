@@ -18,8 +18,8 @@ export const OddEvenDistribution = ({ analysis }: Props) => {
       <div className="flex flex-col gap-y-1">
         <h2 className="text-lg font-medium">Odd / even split (main numbers)</h2>
         <p className="text-xs text-muted-foreground">
-          Share of historical draws by odd-number count among the 5 main numbers.
-          The generator&apos;s default odd range is {lo}–{hi}.
+          Share of draws by odd-number count among the 5 main numbers.
+          Highlighted rows fall inside the observed odd-count range ({lo}–{hi}).
         </p>
       </div>
 
