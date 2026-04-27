@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { HelpPopover } from "@/components/ui/help-popover";
 import type { ThresholdCriteria } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
@@ -119,13 +120,32 @@ export const NumberFrequency = ({ analysis }: Props) => {
 
   return (
     <Card className="flex flex-col gap-y-3 p-4 w-full">
-      <div className="flex flex-col gap-y-1">
-        <h2 className="text-lg font-medium">Overall number frequency</h2>
-        <p className="text-xs text-muted-foreground">
-          How often each number has appeared in any main slot ({MAIN_RANGE.min}–
-          {MAIN_RANGE.max}) and any lucky slot ({LUCKY_RANGE.min}–
-          {LUCKY_RANGE.max}). Top {TOP_HIGHLIGHT} per group are highlighted.
-        </p>
+      <div className="flex items-start justify-between gap-x-3">
+        <div className="flex flex-col gap-y-1">
+          <h2 className="text-lg font-medium">Overall number frequency</h2>
+          <p className="text-xs text-muted-foreground">
+            How often each number has appeared in any main slot (
+            {MAIN_RANGE.min}–{MAIN_RANGE.max}) and any lucky slot (
+            {LUCKY_RANGE.min}–{LUCKY_RANGE.max}). Top {TOP_HIGHLIGHT} per group
+            are highlighted.
+          </p>
+        </div>
+        <HelpPopover title="Overall number frequency">
+          <p>
+            For every ball, this counts how many historical draws it has
+            appeared in — across all main slots for the main pool and across
+            both lucky slots for the lucky pool. The {TOP_HIGHLIGHT} most-drawn
+            balls in each pool are highlighted.
+          </p>
+          <p>
+            <strong>Why it matters:</strong> in a fair draw every number is
+            equally likely, but real-world results drift around that average.
+            This view surfaces which balls have run hot or cold over the full
+            history and is the simplest baseline behind &ldquo;hot
+            number&rdquo; thinking — useful as a sanity check rather than a
+            prediction.
+          </p>
+        </HelpPopover>
       </div>
 
       <div className="flex flex-col gap-y-2">

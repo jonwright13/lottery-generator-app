@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { HelpPopover } from "@/components/ui/help-popover";
 import type { LotteryTuple, ThresholdCriteria } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
@@ -68,13 +69,30 @@ export const SumDistribution = ({ pastNumbers, analysis }: Props) => {
 
   return (
     <Card className="flex flex-col gap-y-3 p-4 w-full">
-      <div className="flex flex-col gap-y-1">
-        <h2 className="text-lg font-medium">Sum of main numbers</h2>
-        <p className="text-xs text-muted-foreground">
-          Distribution of the sum of each draw&apos;s 5 main numbers. Highlighted
-          buckets fall inside the 15th–85th percentile band ({analysis.sumMin}–
-          {analysis.sumMax}).
-        </p>
+      <div className="flex items-start justify-between gap-x-3">
+        <div className="flex flex-col gap-y-1">
+          <h2 className="text-lg font-medium">Sum of main numbers</h2>
+          <p className="text-xs text-muted-foreground">
+            Distribution of the sum of each draw&apos;s 5 main numbers.
+            Highlighted buckets fall inside the 15th–85th percentile band (
+            {analysis.sumMin}–{analysis.sumMax}).
+          </p>
+        </div>
+        <HelpPopover title="Sum of main numbers">
+          <p>
+            Add the 5 main numbers in each historical draw and bucket the
+            totals. The result is a bell-shape centred near the middle of the
+            possible range — sets that sum to extreme totals (very low or very
+            high) are rare because they&apos;d need to be all-small or
+            all-large balls.
+          </p>
+          <p>
+            <strong>Why it matters:</strong> a balanced set tends to land in
+            the 15th–85th percentile band shown here. The generator rejects
+            candidate sets whose sum falls outside that band, which steers
+            picks away from sums that history says almost never come up.
+          </p>
+        </HelpPopover>
       </div>
 
       <ul

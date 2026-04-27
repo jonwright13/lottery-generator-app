@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { HelpPopover } from "@/components/ui/help-popover";
 import type { ThresholdCriteria } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
@@ -44,15 +45,30 @@ export const PreviousDrawOverlap = ({ analysis }: Props) => {
 
   return (
     <Card className="flex flex-col gap-y-3 p-4 w-full">
-      <div className="flex flex-col gap-y-1">
-        <h2 className="text-lg font-medium">
-          Overlap with previous draw
-        </h2>
-        <p className="text-xs text-muted-foreground">
-          How many main numbers each draw shares with the immediately prior
-          draw. Highlighted rows stay at or under the 95th-percentile cap of{" "}
-          {analysis.maxPreviousDrawOverlap}.
-        </p>
+      <div className="flex items-start justify-between gap-x-3">
+        <div className="flex flex-col gap-y-1">
+          <h2 className="text-lg font-medium">Overlap with previous draw</h2>
+          <p className="text-xs text-muted-foreground">
+            How many main numbers each draw shares with the immediately prior
+            draw. Highlighted rows stay at or under the 95th-percentile cap
+            of {analysis.maxPreviousDrawOverlap}.
+          </p>
+        </div>
+        <HelpPopover title="Overlap with previous draw">
+          <p>
+            For every consecutive pair of historical draws, we count how many
+            of the 5 main numbers repeat from one to the next. Most of the
+            time this is 0 or 1; high overlaps are rare even though
+            individual balls are equally likely each time.
+          </p>
+          <p>
+            <strong>Why it matters:</strong> generating a set that almost
+            duplicates the most recent draw is uncommon territory. The
+            generator caps overlap with the previous draw at the
+            95th-percentile observed value so candidates don&apos;t mirror
+            last week&apos;s result.
+          </p>
+        </HelpPopover>
       </div>
 
       <ul

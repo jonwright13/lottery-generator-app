@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { HelpPopover } from "@/components/ui/help-popover";
 import type { ThresholdCriteria } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
@@ -136,13 +137,30 @@ export const GapDistribution = ({ analysis }: Props) => {
 
   return (
     <Card className="flex flex-col gap-y-3 p-4 w-full">
-      <div className="flex flex-col gap-y-1">
-        <h2 className="text-lg font-medium">Gap distribution</h2>
-        <p className="text-xs text-muted-foreground">
-          Sizes of gaps between consecutive sorted numbers in each draw, summed
-          across position pairs. Highlighted bars fall at or below the
-          95th-percentile gap thresholds.
-        </p>
+      <div className="flex items-start justify-between gap-x-3">
+        <div className="flex flex-col gap-y-1">
+          <h2 className="text-lg font-medium">Gap distribution</h2>
+          <p className="text-xs text-muted-foreground">
+            Sizes of gaps between consecutive sorted numbers in each draw,
+            summed across position pairs. Highlighted bars fall at or below
+            the 95th-percentile gap thresholds.
+          </p>
+        </div>
+        <HelpPopover title="Gap distribution">
+          <p>
+            After sorting each draw, look at the difference between each
+            adjacent pair (e.g. 4, 9, 17, 22, 38 → gaps of 5, 8, 5, 16). The
+            chart shows how often each gap size has appeared, separately for
+            the main numbers and for the two lucky numbers.
+          </p>
+          <p>
+            <strong>Why it matters:</strong> very large single gaps (one
+            number sitting way above the rest) are uncommon. The generator
+            rejects sets whose biggest gap exceeds the 95th-percentile
+            threshold, which keeps picks evenly spread instead of clumping
+            with one outlier.
+          </p>
+        </HelpPopover>
       </div>
 
       <div className="flex flex-col gap-y-2">

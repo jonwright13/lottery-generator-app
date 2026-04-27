@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { HelpPopover } from "@/components/ui/help-popover";
 import { DEFAULT_OPTIONS, type LotteryTuple } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
@@ -92,13 +93,32 @@ export const ClusterDistribution = ({ pastNumbers }: Props) => {
 
   return (
     <Card className="flex flex-col gap-y-4 p-4 w-full">
-      <div className="flex flex-col gap-y-1">
-        <h2 className="text-lg font-medium">Decade-band distribution</h2>
-        <p className="text-xs text-muted-foreground">
-          How the 5 main numbers spread across {bands.length} bands of{" "}
-          {CLUSTER_GROUP_SIZE} (1–{CLUSTER_GROUP_SIZE}, …). The cluster rule
-          rejects sets with more than {CLUSTER_MAX} numbers in any one band.
-        </p>
+      <div className="flex items-start justify-between gap-x-3">
+        <div className="flex flex-col gap-y-1">
+          <h2 className="text-lg font-medium">Decade-band distribution</h2>
+          <p className="text-xs text-muted-foreground">
+            How the 5 main numbers spread across {bands.length} bands of{" "}
+            {CLUSTER_GROUP_SIZE} (1–{CLUSTER_GROUP_SIZE}, …). The cluster rule
+            rejects sets with more than {CLUSTER_MAX} numbers in any one band.
+          </p>
+        </div>
+        <HelpPopover title="Decade-band distribution">
+          <p>
+            The pool is split into bands of {CLUSTER_GROUP_SIZE} (1–
+            {CLUSTER_GROUP_SIZE}, {CLUSTER_GROUP_SIZE + 1}–
+            {CLUSTER_GROUP_SIZE * 2}, etc.). For each draw we look at how
+            many of the 5 mains fall into each band — most draws are spread
+            across several bands rather than clumped in one.
+          </p>
+          <p>
+            <strong>Why it matters:</strong> sets that cluster heavily into
+            one band (e.g. five numbers all in 1–10) are rare. The
+            generator&apos;s cluster cap rejects any candidate with more than
+            {" "}
+            {CLUSTER_MAX} numbers in a single band, keeping picks spread
+            across the full range.
+          </p>
+        </HelpPopover>
       </div>
 
       <div className="flex flex-col gap-y-2">

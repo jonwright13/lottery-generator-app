@@ -3,6 +3,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { HelpPopover } from "@/components/ui/help-popover";
 import type { LotteryTuple } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
@@ -79,13 +80,32 @@ export const HotColdNumbers = ({ pastNumbers }: Props) => {
 
   return (
     <Card className="flex flex-col gap-y-4 p-4 w-full">
-      <div className="flex flex-col gap-y-1">
-        <h2 className="text-lg font-medium">Hot &amp; cold numbers</h2>
-        <p className="text-xs text-muted-foreground">
-          How recent appearances of each main number compare to its all-time
-          rate. The generator&rsquo;s Recent-Frequency Bias control biases
-          toward numbers above their all-time rate in the chosen window.
-        </p>
+      <div className="flex items-start justify-between gap-x-3">
+        <div className="flex flex-col gap-y-1">
+          <h2 className="text-lg font-medium">Hot &amp; cold numbers</h2>
+          <p className="text-xs text-muted-foreground">
+            How recent appearances of each main number compare to its
+            all-time rate. The generator&rsquo;s Recent-Frequency Bias
+            control biases toward numbers above their all-time rate in the
+            chosen window.
+          </p>
+        </div>
+        <HelpPopover title="Hot &amp; cold numbers">
+          <p>
+            For each main number we compare its rate of appearance across
+            the last N draws (the rolling window) against its rate across
+            all of history. Numbers above their all-time rate are
+            &ldquo;hot&rdquo;; below it are &ldquo;cold&rdquo;.
+          </p>
+          <p>
+            <strong>Why it matters:</strong> classic gambler&apos;s-fallacy
+            warning applies — past frequency doesn&apos;t change the next
+            draw. But if you want to lean into momentum, the
+            generator&apos;s Recent-Frequency Bias control nudges picks
+            toward currently-hot numbers in the same window you choose
+            here.
+          </p>
+        </HelpPopover>
       </div>
 
       <div className="flex items-center gap-x-3">
