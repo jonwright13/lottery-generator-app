@@ -33,6 +33,7 @@ export interface RejectionCounts {
   sum_in_range: number;
   historical_duplicate: number;
   last_digit_repeat: number;
+  previous_draw_overlap: number;
 }
 
 export interface GenerateValidNumberSetResult {
@@ -66,5 +67,6 @@ export interface GenerateValidNumberSetOptions {
   clusterMax: number;
   clusterGroupSize: number;
   maxSameLastDigit: number;
+  maxPreviousDrawOverlap: number;
   debug: boolean;
 }

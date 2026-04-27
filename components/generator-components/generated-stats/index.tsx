@@ -12,6 +12,7 @@ interface Props {
   combination: LotteryTuple;
   bestPatternProb: number[] | null;
   genOptions: GenerateValidNumberSetOptions;
+  previousDraw: LotteryTuple | null;
 }
 
 const MAIN_COUNT = 5;
@@ -40,6 +41,7 @@ export const GeneratedStats = ({
   combination,
   bestPatternProb,
   genOptions,
+  previousDraw,
 }: Props) => {
   const stats = useMemo(() => {
     const main = combination.slice(0, MAIN_COUNT).map((n) => parseInt(n, 10));
@@ -77,6 +79,14 @@ export const GeneratedStats = ({
       if (clusters[idx]) clusters[idx].count += 1;
     }
 
+    let previousOverlap = 0;
+    if (previousDraw) {
+      const prev = new Set(previousDraw.slice(0, MAIN_COUNT));
+      for (const s of combination.slice(0, MAIN_COUNT)) {
+        if (prev.has(s)) previousOverlap += 1;
+      }
+    }
+
     return {
       sum,
       oddCount,
@@ -86,8 +96,9 @@ export const GeneratedStats = ({
       clusters,
       maxSameLastDigit,
       maxSameLastDigitValue,
+      previousOverlap,
     };
-  }, [combination, genOptions]);
+  }, [combination, genOptions, previousDraw]);
 
   const sumOk = stats.sum >= genOptions.sumMin && stats.sum <= genOptions.sumMax;
   const oddOk =
@@ -97,6 +108,8 @@ export const GeneratedStats = ({
   const luckyGapOk = stats.maxLuckyGap <= genOptions.maxLuckyGapThreshold;
   const clusterOk = stats.clusters.every((c) => c.count <= genOptions.clusterMax);
   const lastDigitOk = stats.maxSameLastDigit <= genOptions.maxSameLastDigit;
+  const overlapOk =
+    stats.previousOverlap <= genOptions.maxPreviousDrawOverlap;
 
   const positionLabels = [
     "Main 1",
@@ -190,6 +203,18 @@ export const GeneratedStats = ({
         <dd className={cn("text-right tabular-nums", inBandClass(lastDigitOk))}>
           {lastDigitOk ? "≤" : ">"} {genOptions.maxSameLastDigit}
         </dd>
+
+        {previousDraw && (
+          <>
+            <dt className="text-muted-foreground">Overlap w/ previous draw</dt>
+            <dd className="text-right tabular-nums">{stats.previousOverlap}</dd>
+            <dd
+              className={cn("text-right tabular-nums", inBandClass(overlapOk))}
+            >
+              {overlapOk ? "≤" : ">"} {genOptions.maxPreviousDrawOverlap}
+            </dd>
+          </>
+        )}
       </dl>
 
       <div className="flex flex-col gap-y-2 border-t pt-3">

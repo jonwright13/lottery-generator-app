@@ -25,7 +25,11 @@ export type RuleOptions = Pick<
   | "clusterGroupSize"
   | "maxMain"
   | "maxSameLastDigit"
->;
+  | "maxPreviousDrawOverlap"
+> & {
+  /** Mains of the most recent draw, as numbers; empty when no history. */
+  previousDrawMain: number[];
+};
 
 export type Rule = (
   nums: number[],
@@ -68,6 +72,13 @@ export const mainRules: Rule[] = [
     maxSameLastDigitCount(nums) > maxSameLastDigit
       ? "last_digit_repeat"
       : null,
+  (nums, { previousDrawMain, maxPreviousDrawOverlap }) => {
+    if (!previousDrawMain.length) return null;
+    const prev = new Set(previousDrawMain);
+    let overlap = 0;
+    for (const n of nums) if (prev.has(n)) overlap += 1;
+    return overlap > maxPreviousDrawOverlap ? "previous_draw_overlap" : null;
+  },
 ];
 
 export const luckyRules: Rule[] = [
