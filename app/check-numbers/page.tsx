@@ -5,8 +5,11 @@ import { Card } from "@/components/ui/card";
 import { MatchResults } from "@/components/match-results";
 import { SavedSetsList } from "@/components/saved-sets-list";
 import { FIELDS } from "@/constants";
+import { useSavedNumbers } from "@/hooks/use-saved-numbers";
 import { LotteryTuple } from "@/lib/generator";
+import { BookmarkCheckIcon, BookmarkIcon } from "lucide-react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
@@ -19,6 +22,8 @@ const MAIN_COUNT = 5;
 
 const CheckNumbersPage = () => {
   const [values, setValues] = useState<Values>(emptyValues);
+  const { list: savedList, add: saveNumbers, remove: removeSaved } =
+    useSavedNumbers();
 
   const padded = useMemo(() => {
     const out: string[] = [];
@@ -35,12 +40,28 @@ const CheckNumbersPage = () => {
   const userMain = padded ? padded.slice(0, MAIN_COUNT) : null;
   const userLucky = padded ? padded.slice(MAIN_COUNT) : null;
 
+  const currentKey = padded?.join(",") ?? null;
+  const savedEntry = currentKey
+    ? savedList.find((s) => s.numbers.join(",") === currentKey)
+    : undefined;
+
   const handleSelectSaved = (numbers: LotteryTuple) => {
     setValues(
       Object.fromEntries(
         FIELDS.map(({ name }, i) => [name, String(Number(numbers[i]))]),
       ),
     );
+  };
+
+  const handleToggleSave = () => {
+    if (!padded) return;
+    if (savedEntry) {
+      removeSaved(savedEntry.id);
+      toast("Removed from saved");
+    } else {
+      saveNumbers(padded as LotteryTuple);
+      toast.success("Saved");
+    }
   };
 
   return (
@@ -74,13 +95,31 @@ const CheckNumbersPage = () => {
                 />
               ))}
             </div>
-            <Button
-              type="button"
-              onClick={() => setValues(emptyValues())}
-              className="px-2 py-4 border rounded-md cursor-pointer"
-            >
-              Clear
-            </Button>
+            <div className="flex gap-x-2">
+              <Button
+                type="button"
+                onClick={() => setValues(emptyValues())}
+                className="flex-1 px-2 py-4 border rounded-md cursor-pointer"
+              >
+                Clear
+              </Button>
+              <Button
+                type="button"
+                variant={savedEntry ? "default" : "outline"}
+                disabled={!padded}
+                onClick={handleToggleSave}
+                title={
+                  !padded
+                    ? "Fill in all numbers to save"
+                    : savedEntry
+                      ? "Saved — click to remove"
+                      : "Save these numbers"
+                }
+              >
+                {savedEntry ? <BookmarkCheckIcon /> : <BookmarkIcon />}
+                {savedEntry ? "Saved" : "Save"}
+              </Button>
+            </div>
           </form>
         </Card>
 
