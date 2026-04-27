@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { useSavedNumbers } from "@/hooks/use-saved-numbers";
 import {
   type GenerateValidNumberSetResult,
   type LotteryTuple,
 } from "@/lib/generator";
+import { BookmarkCheckIcon, BookmarkIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { WorkerResponse } from "@/workers/generateNumbers.worker";
@@ -32,6 +34,25 @@ export const GeneratorContainer = ({
   const [durationMs, setDurationMs] = useState<number | null>(null);
 
   const workerRef = useRef<Worker | null>(null);
+  const { list: savedList, add: saveNumbers, remove: removeSaved } =
+    useSavedNumbers();
+
+  const currentKey = results?.bestCombination?.join(",") ?? null;
+  const savedEntry = currentKey
+    ? savedList.find((s) => s.numbers.join(",") === currentKey)
+    : undefined;
+
+  const handleToggleSave = (combination: LotteryTuple) => {
+    if (savedEntry) {
+      removeSaved(savedEntry.id);
+      toast("Removed from saved");
+    } else {
+      saveNumbers(combination);
+      toast.success("Saved", {
+        description: "Find it on the Check Numbers page.",
+      });
+    }
+  };
 
   useEffect(() => {
     workerRef.current = new Worker(
@@ -122,13 +143,25 @@ export const GeneratorContainer = ({
                 ))}
               </ul>
             </Card>
-            <CopyToClipboardButton
-              txtToCopy={
-                results?.bestCombination
-                  ? results.bestCombination.join(", ")
-                  : undefined
-              }
-            />
+            <div className="flex gap-x-2">
+              {results.bestCombination && (
+                <Button
+                  type="button"
+                  variant={savedEntry ? "default" : "outline"}
+                  onClick={() => handleToggleSave(results.bestCombination!)}
+                  title={
+                    savedEntry
+                      ? "Saved — click to remove"
+                      : "Save to Check Numbers"
+                  }
+                >
+                  {savedEntry ? <BookmarkCheckIcon /> : <BookmarkIcon />}
+                </Button>
+              )}
+              <CopyToClipboardButton
+                txtToCopy={results.bestCombination?.join(", ") ?? undefined}
+              />
+            </div>
           </div>
           <Label className="text-sm font-extralight">
             Hover over numbers to check individual positional frequency scores
