@@ -7,3 +7,4 @@ export { OddEvenDistItem } from "./odd-even-dist";
 export { PairScoreWeightItem } from "./pair-score-weight";
 export { PositionalFrequencyScoreItem } from "./positional-frequency-score";
 export { PreviousDrawOverlapItem } from "./previous-draw-overlap";
+export { RecentBiasItem } from "./recent-bias";

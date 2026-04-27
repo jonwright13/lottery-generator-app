@@ -195,6 +195,15 @@ export const GeneratorContainer = ({
             <dd className="text-right tabular-nums">
               {results?.bestPairScore.toFixed(2)}%
             </dd>
+            {results?.bestRecentScore != null &&
+              results.bestRecentScore > 0 && (
+                <>
+                  <dt className="text-muted-foreground">Recent frequency</dt>
+                  <dd className="text-right tabular-nums">
+                    {results.bestRecentScore.toFixed(2)}%
+                  </dd>
+                </>
+              )}
           </dl>
         </>
       )}

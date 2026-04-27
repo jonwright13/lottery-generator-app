@@ -23,6 +23,7 @@ import {
   PairScoreWeightItem,
   PositionalFrequencyScoreItem,
   PreviousDrawOverlapItem,
+  RecentBiasItem,
 } from "./accordion-items";
 
 interface Props extends GeneratorProps {
@@ -98,6 +99,24 @@ export const GeneratorControls = ({
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
             <PairScoreWeightItem
+              genOptions={genOptions}
+              updateOptions={updateOptions}
+            />
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="recent-bias">
+          <AccordionTrigger>
+            <TriggerRow
+              label="Recent-Frequency Bias"
+              value={
+                genOptions.recentBias > 0 && genOptions.recentWindowSize > 0
+                  ? `${Math.round(genOptions.recentBias * 100)}% of last ${genOptions.recentWindowSize}`
+                  : "off"
+              }
+            />
+          </AccordionTrigger>
+          <AccordionContent className="flex flex-col gap-y-2">
+            <RecentBiasItem
               genOptions={genOptions}
               updateOptions={updateOptions}
             />
