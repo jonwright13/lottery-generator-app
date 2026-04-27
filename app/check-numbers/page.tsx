@@ -72,7 +72,7 @@ const CheckNumbersPage = () => {
         each prize tier.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4 w-full">
         <Card className="flex flex-col gap-y-4 p-4 w-full">
           <form
             className="flex flex-col gap-y-2"
