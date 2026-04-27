@@ -33,7 +33,7 @@ export const MatchResults = ({ userMain, userLucky }: Props) => {
   const userLuckySet = useMemo(() => new Set(userLucky ?? []), [userLucky]);
 
   return (
-    <Card className="flex flex-col gap-y-2 p-4 w-full">
+    <Card className="flex flex-col gap-y-2 p-4 w-full h-full">
       <h3 className="text-lg font-semibold">Historical matches</h3>
       {!tiers ? (
         <p className="text-sm text-muted-foreground">

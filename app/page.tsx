@@ -1,8 +1,13 @@
 "use client";
 
+import { GeneratedStats } from "@/components/generator-components/generated-stats";
 import { GeneratorContainer } from "@/components/generator-components/generator-container";
 import { GeneratorControls } from "@/components/generator-components/generator-controls";
+import { MatchResults } from "@/components/match-results";
 import { useData } from "@/context/useDataProvider";
+import { useGenerator } from "@/hooks/use-generator";
+
+const MAIN_COUNT = 5;
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",
@@ -11,6 +16,15 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 export default function Home() {
   const { pastNumbers, analysis, genOptions, updateOptions, updatedAt } =
     useData();
+
+  const { isGenerating, results, durationMs, generate } = useGenerator();
+
+  const handleGenerate = () =>
+    generate(pastNumbers, genOptions, analysis.positionCounters);
+
+  const combination = results?.bestCombination ?? null;
+  const userMain = combination ? combination.slice(0, MAIN_COUNT) : null;
+  const userLucky = combination ? combination.slice(MAIN_COUNT) : null;
 
   const updatedLabel = (() => {
     const d = new Date(updatedAt);
@@ -28,17 +42,28 @@ export default function Home() {
           </p>
         )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
         <GeneratorContainer
-          pastNumbers={pastNumbers}
-          genOptions={genOptions}
-          positionCounters={analysis.positionCounters}
+          isGenerating={isGenerating}
+          results={results}
+          durationMs={durationMs}
+          onGenerate={handleGenerate}
         />
         <GeneratorControls
           updateOptions={updateOptions}
           analysis={analysis}
           genOptions={genOptions}
         />
+        {combination && (
+          <>
+            <MatchResults userMain={userMain} userLucky={userLucky} />
+            <GeneratedStats
+              combination={combination}
+              bestPatternProb={results?.bestPatternProb ?? null}
+              genOptions={genOptions}
+            />
+          </>
+        )}
       </div>
     </div>
   );
