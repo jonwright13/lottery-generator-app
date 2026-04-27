@@ -33,6 +33,15 @@ interface PreviousDrawOverlap {
   pairsAnalysed: number;
 }
 
+interface ArithmeticProgressionAnalysis {
+  /** Number of historical draws whose main numbers contain an AP-3 with d ≥ 2. */
+  drawsWithAp3: number;
+  /** Total historical draws inspected. */
+  drawsAnalysed: number;
+  /** Per common-difference d (2..max), how many draws contain at least one AP-3 with that d. */
+  drawsByDiff: Record<number, number>;
+}
+
 export class ThresholdCriteria {
   maxPatternProbs: Record<string, number>;
   oddRange: OddRange;
@@ -48,6 +57,7 @@ export class ThresholdCriteria {
   maxSameLastDigit: number;
   previousDrawOverlapData: PreviousDrawOverlap;
   maxPreviousDrawOverlap: number;
+  arithmeticProgressionData: ArithmeticProgressionAnalysis;
 
   constructor(lotteryNumbers: LotteryTuple[], debug = false) {
     this.maxPatternProbs = this.getMaxPatternProbabilities(
@@ -101,6 +111,46 @@ export class ThresholdCriteria {
       this.analyzePreviousDrawOverlap(lotteryNumbers, true, 95);
     this.previousDrawOverlapData = overlapDist;
     this.maxPreviousDrawOverlap = overlapMax;
+
+    this.arithmeticProgressionData =
+      this.analyzeArithmeticProgressionDistribution(lotteryNumbers, true);
+  }
+
+  analyzeArithmeticProgressionDistribution(
+    lotteryNumbers: LotteryTuple[],
+    mainOnly = true,
+  ): ArithmeticProgressionAnalysis {
+    const lengthToCheck = mainOnly ? 5 : lotteryNumbers[0]?.length ?? 0;
+    const drawsByDiff: Record<number, number> = {};
+    let drawsWithAp3 = 0;
+
+    for (const draw of lotteryNumbers) {
+      const nums = draw
+        .slice(0, lengthToCheck)
+        .map((n) => parseInt(n, 10))
+        .sort((a, b) => a - b);
+      const set = new Set(nums);
+      const seenDiffs = new Set<number>();
+      for (let i = 0; i < nums.length; i++) {
+        for (let j = i + 1; j < nums.length; j++) {
+          const d = nums[j] - nums[i];
+          if (d < 2) continue;
+          if (set.has(nums[i] + 2 * d)) seenDiffs.add(d);
+        }
+      }
+      if (seenDiffs.size > 0) {
+        drawsWithAp3 += 1;
+        for (const d of seenDiffs) {
+          drawsByDiff[d] = (drawsByDiff[d] ?? 0) + 1;
+        }
+      }
+    }
+
+    return {
+      drawsWithAp3,
+      drawsAnalysed: lotteryNumbers.length,
+      drawsByDiff,
+    };
   }
 
   analyzePreviousDrawOverlap(

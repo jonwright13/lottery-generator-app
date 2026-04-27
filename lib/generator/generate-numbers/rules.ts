@@ -3,6 +3,7 @@ import type {
   RejectionCounts,
 } from "../types";
 import {
+  containsArithmeticProgression,
   countClustersMainNumbers,
   countMaxConsecutiveRun,
   countMultiples,
@@ -52,6 +53,8 @@ export const mainRules: Rule[] = [
   (nums, { sumMin, sumMax }) =>
     isSumInRange(nums, sumMin, sumMax) ? null : "sum_in_range",
   (nums) => (countMaxConsecutiveRun(nums) >= 3 ? "max_run" : null),
+  (nums) =>
+    containsArithmeticProgression(nums, 3, 2) ? "arithmetic_progression" : null,
   (nums, { oddRange }) => {
     const oddCount = nums.reduce((acc, n) => acc + (n % 2 === 1 ? 1 : 0), 0);
     return oddCount < oddRange[0] || oddCount > oddRange[1]
