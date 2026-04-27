@@ -1,0 +1,79 @@
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { useSavedNumbers, type SavedSet } from "@/hooks/use-saved-numbers";
+import { useData } from "@/context/useDataProvider";
+import { TrashIcon } from "lucide-react";
+import { useMemo } from "react";
+
+interface RowProps {
+  set: SavedSet;
+  matched: boolean;
+  onRemove: (id: string) => void;
+}
+
+const Row = ({ set, matched, onRemove }: RowProps) => (
+  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b last:border-b-0 py-2">
+    <ul className="flex gap-x-2 font-mono text-sm md:text-base">
+      {set.numbers.map((n, i) => (
+        <li key={i}>{n}</li>
+      ))}
+    </ul>
+    <span
+      className={
+        matched
+          ? "text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+          : "text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
+      }
+    >
+      {matched ? "Drawn before" : "Not drawn"}
+    </span>
+    <span className="text-xs text-muted-foreground ml-auto">
+      {new Date(set.savedAt).toLocaleString()}
+    </span>
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      onClick={() => onRemove(set.id)}
+      title="Remove"
+    >
+      <TrashIcon />
+    </Button>
+  </div>
+);
+
+export const SavedSetsList = () => {
+  const { pastNumbers } = useData();
+  const { list, remove, hydrated } = useSavedNumbers();
+
+  const pastSet = useMemo(
+    () => new Set(pastNumbers.map((row) => row.join(","))),
+    [pastNumbers],
+  );
+
+  if (!hydrated) return null;
+
+  if (list.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        No saved numbers yet. Generate some on the home page and tap the
+        bookmark to save them here.
+      </p>
+    );
+  }
+
+  return (
+    <Card className="flex flex-col p-2 md:p-4 w-full">
+      {list.map((s) => (
+        <Row
+          key={s.id}
+          set={s}
+          matched={pastSet.has(s.numbers.join(","))}
+          onRemove={remove}
+        />
+      ))}
+    </Card>
+  );
+};

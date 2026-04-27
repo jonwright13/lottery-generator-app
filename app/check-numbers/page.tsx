@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SavedSetsList } from "@/components/saved-sets-list";
 import { FIELDS } from "@/constants";
 import { useData } from "@/context/useDataProvider";
 import { LotteryTuple } from "@/lib/generator";
@@ -95,6 +96,9 @@ const CheckNumbersPage = () => {
           </div>
         </form>
       </Card>
+
+      <h2 className="text-lg font-medium mt-4">Saved sets</h2>
+      <SavedSetsList />
     </>
   );
 };
