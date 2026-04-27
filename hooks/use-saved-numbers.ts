@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import type { LotteryTuple } from "@/lib/generator";
 
 export interface SavedSet {
@@ -41,39 +41,57 @@ function writeToStorage(list: SavedSet[]): void {
   }
 }
 
-export function useSavedNumbers() {
-  const [list, setList] = useState<SavedSet[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+// Module-level state so every component reading the hook sees the same list
+// and updates land everywhere immediately without prop drilling or context.
+let state: SavedSet[] = [];
+let hydrated = false;
+const SERVER_SNAPSHOT: SavedSet[] = [];
+const listeners = new Set<() => void>();
 
-  // Hydrate from localStorage after mount. Server render and first client
-  // render must match (both empty); the real data populates on the next paint.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setList(loadFromStorage());
-    setHydrated(true);
-  }, []);
+function ensureHydrated() {
+  if (hydrated || typeof window === "undefined") return;
+  hydrated = true;
+  state = loadFromStorage();
+}
+
+function commit(next: SavedSet[]) {
+  state = next;
+  writeToStorage(next);
+  for (const cb of listeners) cb();
+}
+
+function subscribe(cb: () => void) {
+  ensureHydrated();
+  listeners.add(cb);
+  return () => {
+    listeners.delete(cb);
+  };
+}
+
+function getSnapshot() {
+  return state;
+}
+
+function getServerSnapshot() {
+  return SERVER_SNAPSHOT;
+}
+
+export function useSavedNumbers() {
+  const list = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const add = useCallback((numbers: LotteryTuple) => {
-    setList((prev) => {
-      const next: SavedSet[] = [
-        {
-          id: crypto.randomUUID(),
-          numbers,
-          savedAt: new Date().toISOString(),
-        },
-        ...prev,
-      ];
-      writeToStorage(next);
-      return next;
-    });
+    commit([
+      {
+        id: crypto.randomUUID(),
+        numbers,
+        savedAt: new Date().toISOString(),
+      },
+      ...state,
+    ]);
   }, []);
 
   const remove = useCallback((id: string) => {
-    setList((prev) => {
-      const next = prev.filter((s) => s.id !== id);
-      writeToStorage(next);
-      return next;
-    });
+    commit(state.filter((s) => s.id !== id));
   }, []);
 
   return { list, add, remove, hydrated };
