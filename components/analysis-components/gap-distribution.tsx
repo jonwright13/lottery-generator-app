@@ -141,7 +141,7 @@ export const GapDistribution = ({ analysis }: Props) => {
         <p className="text-xs text-muted-foreground">
           Sizes of gaps between consecutive sorted numbers in each draw, summed
           across position pairs. Highlighted bars fall at or below the
-          generator&apos;s 95th-percentile gap thresholds.
+          95th-percentile gap thresholds.
         </p>
       </div>
 
