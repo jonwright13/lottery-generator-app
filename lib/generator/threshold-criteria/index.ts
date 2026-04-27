@@ -42,6 +42,19 @@ interface ArithmeticProgressionAnalysis {
   drawsByDiff: Record<number, number>;
 }
 
+interface PairCoOccurrenceAnalysis {
+  /** Map keyed "a,b" with a<b of how many historical draws contain both a and b in main. */
+  pairCounts: Record<string, number>;
+  /** Mean pair co-occurrence count across the C(maxMain, 2) pairs that actually appear in history. */
+  meanPairCount: number;
+  /** Total historical draws inspected. */
+  drawsAnalysed: number;
+  /** Range of values used to mainOnly-slice each tuple. */
+  mainCount: number;
+  /** Highest main number considered (typically maxMain = 50). */
+  maxMain: number;
+}
+
 export class ThresholdCriteria {
   maxPatternProbs: Record<string, number>;
   oddRange: OddRange;
@@ -58,6 +71,7 @@ export class ThresholdCriteria {
   previousDrawOverlapData: PreviousDrawOverlap;
   maxPreviousDrawOverlap: number;
   arithmeticProgressionData: ArithmeticProgressionAnalysis;
+  pairCoOccurrenceData: PairCoOccurrenceAnalysis;
 
   constructor(lotteryNumbers: LotteryTuple[], debug = false) {
     this.maxPatternProbs = this.getMaxPatternProbabilities(
@@ -114,6 +128,46 @@ export class ThresholdCriteria {
 
     this.arithmeticProgressionData =
       this.analyzeArithmeticProgressionDistribution(lotteryNumbers, true);
+
+    this.pairCoOccurrenceData = this.analyzePairCoOccurrence(
+      lotteryNumbers,
+      5,
+      50,
+    );
+  }
+
+  analyzePairCoOccurrence(
+    lotteryNumbers: LotteryTuple[],
+    mainCount = 5,
+    maxMain = 50,
+  ): PairCoOccurrenceAnalysis {
+    const pairCounts: Record<string, number> = {};
+
+    for (const draw of lotteryNumbers) {
+      const nums = draw
+        .slice(0, mainCount)
+        .map((n) => parseInt(n, 10))
+        .sort((a, b) => a - b);
+      for (let i = 0; i < nums.length; i++) {
+        for (let j = i + 1; j < nums.length; j++) {
+          const key = `${nums[i]},${nums[j]}`;
+          pairCounts[key] = (pairCounts[key] ?? 0) + 1;
+        }
+      }
+    }
+
+    const totalPossiblePairs = (maxMain * (maxMain - 1)) / 2;
+    let sum = 0;
+    for (const v of Object.values(pairCounts)) sum += v;
+    const meanPairCount = totalPossiblePairs > 0 ? sum / totalPossiblePairs : 0;
+
+    return {
+      pairCounts,
+      meanPairCount,
+      drawsAnalysed: lotteryNumbers.length,
+      mainCount,
+      maxMain,
+    };
   }
 
   analyzeArithmeticProgressionDistribution(

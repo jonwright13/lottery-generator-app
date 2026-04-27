@@ -20,6 +20,7 @@ import {
   MaxIterationsItem,
   MinMaxSumItem,
   OddEvenDistItem,
+  PairScoreWeightItem,
   PositionalFrequencyScoreItem,
   PreviousDrawOverlapItem,
 } from "./accordion-items";
@@ -85,6 +86,20 @@ export const GeneratorControls = ({
             <PositionalFrequencyScoreItem
               genOptions={genOptions}
               handleInputChange={handleInputChange}
+            />
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="pair-score-weight">
+          <AccordionTrigger>
+            <TriggerRow
+              label="Pair-Score Weight"
+              value={`${Math.round(genOptions.pairScoreWeight * 100)}%`}
+            />
+          </AccordionTrigger>
+          <AccordionContent className="flex flex-col gap-y-2">
+            <PairScoreWeightItem
+              genOptions={genOptions}
+              updateOptions={updateOptions}
             />
           </AccordionContent>
         </AccordionItem>

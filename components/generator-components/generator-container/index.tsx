@@ -191,6 +191,10 @@ export const GeneratorContainer = ({
             <dd className="text-right tabular-nums">
               {results?.bestScore.toFixed(2)}%
             </dd>
+            <dt className="text-muted-foreground">Pair-cohesion score</dt>
+            <dd className="text-right tabular-nums">
+              {results?.bestPairScore.toFixed(2)}%
+            </dd>
           </dl>
         </>
       )}

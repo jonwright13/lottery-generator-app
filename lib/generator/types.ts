@@ -40,6 +40,7 @@ export interface RejectionCounts {
 export interface GenerateValidNumberSetResult {
   bestCombination: LotteryTuple | null;
   bestScore: number;
+  bestPairScore: number;
   bestPatternProb: number[] | null;
   iterations: number;
   rejections: RejectionCounts;
@@ -69,5 +70,6 @@ export interface GenerateValidNumberSetOptions {
   clusterGroupSize: number;
   maxSameLastDigit: number;
   maxPreviousDrawOverlap: number;
+  pairScoreWeight: number;
   debug: boolean;
 }
