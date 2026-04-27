@@ -4,6 +4,7 @@ export interface MatchTier {
   mainHits: number;
   luckyHits: number;
   draws: number;
+  drawIndices: number[];
 }
 
 // Ordered by descending prize-tier significance, mirroring the taxonomy in
@@ -31,24 +32,34 @@ export function countMatchesByTier(
 ): MatchTier[] {
   const userMainSet = new Set(userMain);
   const userLuckySet = new Set(userLucky);
-  const counts = new Map<string, number>();
+  const indices = new Map<string, number[]>();
 
-  for (const draw of draws) {
+  for (let i = 0; i < draws.length; i++) {
+    const draw = draws[i];
     let mainHits = 0;
-    for (let i = 0; i < MAIN_COUNT; i++) {
-      if (userMainSet.has(draw[i])) mainHits++;
+    for (let j = 0; j < MAIN_COUNT; j++) {
+      if (userMainSet.has(draw[j])) mainHits++;
     }
     let luckyHits = 0;
-    for (let i = MAIN_COUNT; i < draw.length; i++) {
-      if (userLuckySet.has(draw[i])) luckyHits++;
+    for (let j = MAIN_COUNT; j < draw.length; j++) {
+      if (userLuckySet.has(draw[j])) luckyHits++;
     }
     const key = `${mainHits},${luckyHits}`;
-    counts.set(key, (counts.get(key) ?? 0) + 1);
+    const list = indices.get(key);
+    if (list) {
+      list.push(i);
+    } else {
+      indices.set(key, [i]);
+    }
   }
 
-  return TIER_ORDER.map(([mainHits, luckyHits]) => ({
-    mainHits,
-    luckyHits,
-    draws: counts.get(`${mainHits},${luckyHits}`) ?? 0,
-  }));
+  return TIER_ORDER.map(([mainHits, luckyHits]) => {
+    const drawIndices = indices.get(`${mainHits},${luckyHits}`) ?? [];
+    return {
+      mainHits,
+      luckyHits,
+      draws: drawIndices.length,
+      drawIndices,
+    };
+  });
 }

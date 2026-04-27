@@ -14,7 +14,33 @@ describe("countMatchesByTier", () => {
       ["06", "07"],
       draws,
     );
-    expect(tiers[0]).toEqual({ mainHits: 5, luckyHits: 2, draws: 1 });
+    expect(tiers[0]).toEqual({
+      mainHits: 5,
+      luckyHits: 2,
+      draws: 1,
+      drawIndices: [0],
+    });
+  });
+
+  it("preserves the original draw indices for each tier", () => {
+    const draws: LotteryTuple[] = [
+      draw("99", "98", "97", "96", "95", "10", "11"), // 0+0
+      draw("01", "02", "03", "04", "05", "06", "07"), // 5+2 (idx 1)
+      draw("99", "98", "97", "96", "95", "10", "11"), // 0+0
+      draw("01", "02", "03", "04", "99", "06", "07"), // 4+2 (idx 3)
+      draw("01", "02", "03", "04", "05", "06", "07"), // 5+2 (idx 4)
+    ];
+    const tiers = countMatchesByTier(
+      ["01", "02", "03", "04", "05"],
+      ["06", "07"],
+      draws,
+    );
+    const find = (m: number, l: number) =>
+      tiers.find((t) => t.mainHits === m && t.luckyHits === l);
+
+    expect(find(5, 2)?.drawIndices).toEqual([1, 4]);
+    expect(find(4, 2)?.drawIndices).toEqual([3]);
+    expect(find(5, 0)?.drawIndices).toEqual([]);
   });
 
   it("uses set membership, not position, for lucky matches", () => {
@@ -25,7 +51,12 @@ describe("countMatchesByTier", () => {
       ["06", "07"],
       draws,
     );
-    expect(tiers).toContainEqual({ mainHits: 5, luckyHits: 1, draws: 1 });
+    expect(tiers).toContainEqual({
+      mainHits: 5,
+      luckyHits: 1,
+      draws: 1,
+      drawIndices: [0],
+    });
   });
 
   it("returns 0 for tiers with no matching draws", () => {

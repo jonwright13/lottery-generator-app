@@ -1,6 +1,11 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useData } from "@/context/useDataProvider";
 import { countMatchesByTier } from "@/lib/lottery-match";
 import { useMemo } from "react";
@@ -11,7 +16,7 @@ interface Props {
 }
 
 export const MatchResults = ({ userMain, userLucky }: Props) => {
-  const { pastNumbers } = useData();
+  const { pastNumbers, dates } = useData();
 
   const tiers = useMemo(
     () =>
@@ -30,25 +35,55 @@ export const MatchResults = ({ userMain, userLucky }: Props) => {
         </p>
       ) : (
         <ul className="flex flex-col gap-y-1">
-          {tiers.map(({ mainHits, luckyHits, draws }, i) => {
+          {tiers.map(({ mainHits, luckyHits, draws, drawIndices }, i) => {
             const isJackpot = i === 0;
+            const label = `${draws} ${draws === 1 ? "draw" : "draws"}`;
+            const rowCls =
+              "flex items-center justify-between gap-x-2 px-2 py-1 rounded-md " +
+              (isJackpot
+                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium"
+                : "");
             return (
               <li
                 key={`${mainHits}-${luckyHits}`}
-                className={
-                  "flex items-center justify-between gap-x-2 px-2 py-1 rounded-md " +
-                  (isJackpot
-                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium"
-                    : "")
-                }
+                className={rowCls}
               >
                 <span className="text-sm">
                   {mainHits} main + {luckyHits} lucky
                   {isJackpot && " (full match)"}
                 </span>
-                <span className="text-sm tabular-nums">
-                  {draws} {draws === 1 ? "draw" : "draws"}
-                </span>
+                {draws === 0 ? (
+                  <span className="text-sm tabular-nums text-muted-foreground">
+                    {label}
+                  </span>
+                ) : (
+                  <Popover>
+                    <PopoverTrigger
+                      className="text-sm tabular-nums underline-offset-2 hover:underline cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1"
+                      title="Show dates"
+                    >
+                      {label}
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="end"
+                      className="w-64 max-h-72 overflow-auto"
+                    >
+                      <p className="text-xs font-medium mb-2">
+                        {mainHits} main + {luckyHits} lucky · {label}
+                      </p>
+                      <ul className="flex flex-col gap-y-1 text-xs tabular-nums">
+                        {drawIndices
+                          .map((idx) => dates[idx])
+                          .sort((a, b) => (a < b ? 1 : a > b ? -1 : 0))
+                          .map((d, j) => (
+                            <li key={j}>
+                              {new Date(d).toLocaleDateString()}
+                            </li>
+                          ))}
+                      </ul>
+                    </PopoverContent>
+                  </Popover>
+                )}
               </li>
             );
           })}
