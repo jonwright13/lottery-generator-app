@@ -17,6 +17,7 @@ export interface UseGenerator {
     pastNumbers: LotteryTuple[],
     genOptions: GenerateValidNumberSetOptions,
     positionCounters?: Array<Record<string, number>>,
+    pairCounts?: Record<string, number>,
   ) => void;
 }
 
@@ -41,6 +42,7 @@ export function useGenerator(): UseGenerator {
     pastNumbers,
     genOptions,
     positionCounters,
+    pairCounts,
   ) => {
     if (!workerRef.current) throw new Error("Worker not ready");
 
@@ -79,6 +81,7 @@ export function useGenerator(): UseGenerator {
       pastNumbers,
       genOptions,
       positionCounters,
+      pairCounts,
     });
   };
 

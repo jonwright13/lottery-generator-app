@@ -29,5 +29,6 @@ export const DEFAULT_OPTIONS: GenerateValidNumberSetOptions = {
   clusterGroupSize: 10,
   maxSameLastDigit: 3,
   maxPreviousDrawOverlap: 2,
+  pairScoreWeight: 0,
   debug: false,
 } as const;

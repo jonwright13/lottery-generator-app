@@ -20,7 +20,12 @@ export default function Home() {
   const { isGenerating, results, durationMs, generate } = useGenerator();
 
   const handleGenerate = () =>
-    generate(pastNumbers, genOptions, analysis.positionCounters);
+    generate(
+      pastNumbers,
+      genOptions,
+      analysis.positionCounters,
+      analysis.pairCoOccurrenceData.pairCounts,
+    );
 
   const combination = results?.bestCombination ?? null;
   const userMain = combination ? combination.slice(0, MAIN_COUNT) : null;
@@ -62,6 +67,7 @@ export default function Home() {
               bestPatternProb={results?.bestPatternProb ?? null}
               genOptions={genOptions}
               previousDraw={pastNumbers[0] ?? null}
+              pairData={analysis.pairCoOccurrenceData}
             />
           </>
         )}

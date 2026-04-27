@@ -6,6 +6,7 @@ import { GapDistribution } from "@/components/analysis-components/gap-distributi
 import { LastDigitDistribution } from "@/components/analysis-components/last-digit-distribution";
 import { NumberFrequency } from "@/components/analysis-components/number-frequency";
 import { OddEvenDistribution } from "@/components/analysis-components/odd-even-distribution";
+import { PairCoOccurrence } from "@/components/analysis-components/pair-cooccurrence";
 import { PreviousDrawOverlap } from "@/components/analysis-components/previous-draw-overlap";
 import { SumDistribution } from "@/components/analysis-components/sum-distribution";
 import { TopNumbersPerPosition } from "@/components/analysis-components/top-numbers-per-position";
@@ -150,6 +151,8 @@ const AnalysisContent = () => {
           <PreviousDrawOverlap analysis={windowedAnalysis} />
 
           <ArithmeticProgressionDistribution analysis={windowedAnalysis} />
+
+          <PairCoOccurrence analysis={windowedAnalysis} />
         </>
       )}
     </div>

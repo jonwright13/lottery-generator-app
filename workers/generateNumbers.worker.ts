@@ -9,6 +9,7 @@ export interface WorkerRequest {
   pastNumbers: LotteryTuple[];
   genOptions: Partial<GenerateValidNumberSetOptions>;
   positionCounters?: Array<Record<string, number>>;
+  pairCounts?: Record<string, number>;
 }
 
 export type WorkerResponse =
@@ -17,11 +18,12 @@ export type WorkerResponse =
 
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
   try {
-    const { pastNumbers, genOptions, positionCounters } = e.data;
+    const { pastNumbers, genOptions, positionCounters, pairCounts } = e.data;
     const res = generateValidNumberSet(
       pastNumbers,
       genOptions,
       positionCounters,
+      pairCounts,
     );
     const reply: WorkerResponse = { ok: true, res };
     self.postMessage(reply);

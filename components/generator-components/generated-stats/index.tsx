@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import type {
   GenerateValidNumberSetOptions,
   LotteryTuple,
+  ThresholdCriteria,
 } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
@@ -13,6 +14,7 @@ interface Props {
   bestPatternProb: number[] | null;
   genOptions: GenerateValidNumberSetOptions;
   previousDraw: LotteryTuple | null;
+  pairData: ThresholdCriteria["pairCoOccurrenceData"];
 }
 
 const MAIN_COUNT = 5;
@@ -42,6 +44,7 @@ export const GeneratedStats = ({
   bestPatternProb,
   genOptions,
   previousDraw,
+  pairData,
 }: Props) => {
   const stats = useMemo(() => {
     const main = combination.slice(0, MAIN_COUNT).map((n) => parseInt(n, 10));
@@ -100,6 +103,23 @@ export const GeneratedStats = ({
       }
     }
 
+    let pairCohesionPct = 0;
+    let pairMeanPct = 0;
+    if (pairData.drawsAnalysed > 0) {
+      let pairSum = 0;
+      let pairN = 0;
+      for (let i = 0; i < sortedMain.length; i++) {
+        for (let j = i + 1; j < sortedMain.length; j++) {
+          const key = `${sortedMain[i]},${sortedMain[j]}`;
+          pairSum += pairData.pairCounts[key] ?? 0;
+          pairN += 1;
+        }
+      }
+      pairCohesionPct =
+        pairN > 0 ? ((pairSum / pairN) / pairData.drawsAnalysed) * 100 : 0;
+      pairMeanPct = (pairData.meanPairCount / pairData.drawsAnalysed) * 100;
+    }
+
     return {
       sum,
       oddCount,
@@ -111,8 +131,10 @@ export const GeneratedStats = ({
       maxSameLastDigitValue,
       previousOverlap,
       ap3Diff,
+      pairCohesionPct,
+      pairMeanPct,
     };
-  }, [combination, genOptions, previousDraw]);
+  }, [combination, genOptions, previousDraw, pairData]);
 
   const sumOk = stats.sum >= genOptions.sumMin && stats.sum <= genOptions.sumMax;
   const oddOk =
@@ -125,6 +147,7 @@ export const GeneratedStats = ({
   const overlapOk =
     stats.previousOverlap <= genOptions.maxPreviousDrawOverlap;
   const ap3Ok = stats.ap3Diff === null;
+  const pairOk = stats.pairCohesionPct >= stats.pairMeanPct;
 
   const positionLabels = [
     "Main 1",
@@ -237,6 +260,14 @@ export const GeneratedStats = ({
         </dd>
         <dd className={cn("text-right tabular-nums", inBandClass(ap3Ok))}>
           {ap3Ok ? "no AP-3" : "AP-3 present"}
+        </dd>
+
+        <dt className="text-muted-foreground">Pair cohesion</dt>
+        <dd className="text-right tabular-nums">
+          {stats.pairCohesionPct.toFixed(2)}%
+        </dd>
+        <dd className={cn("text-right tabular-nums", inBandClass(pairOk))}>
+          {pairOk ? "≥" : "<"} mean {stats.pairMeanPct.toFixed(2)}%
         </dd>
       </dl>
 
