@@ -32,7 +32,7 @@ export default function RootLayout({
         <Providers>
           <Navbar />
           <div className="flex justify-center font-sans">
-            <main className="flex w-full justify-center lg:max-w-6xl flex-col gap-y-6 py-10 md:py-16 lg:py-32 px-8 md:px-16 items-start">
+            <main className="flex w-full justify-center lg:max-w-6xl flex-col gap-y-6 py-6 md:py-8 lg:py-10 px-8 md:px-16 items-start">
               {children}
             </main>
           </div>
