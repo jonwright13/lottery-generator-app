@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ThresholdCriteria } from "@/lib/generator";
 import { FIELDS } from "@/constants";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { PositionHeatmap } from "./position-heat-map";
 
@@ -36,7 +37,7 @@ export const Heatmap = ({ analysis }: Props) => {
   const [usePct, setUsePct] = useState(true);
 
   return (
-    <section className="flex flex-col gap-y-4">
+    <Card className="flex flex-col gap-y-3 p-4 w-full">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-y-1">
           <h2 className="text-lg font-medium">
@@ -101,7 +102,7 @@ export const Heatmap = ({ analysis }: Props) => {
       })}
 
       <HeatmapLegend usePct={usePct} />
-    </section>
+    </Card>
   );
 };
 

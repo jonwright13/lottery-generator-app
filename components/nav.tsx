@@ -60,6 +60,11 @@ const NavItems = () => {
           </Link>
         </li>
         <li>
+          <Link href="/analysis" className="hover:underline">
+            Analysis
+          </Link>
+        </li>
+        <li>
           <Link href="/historical" className="hover:underline">
             Historical
           </Link>

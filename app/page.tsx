@@ -2,7 +2,6 @@
 
 import { GeneratorContainer } from "@/components/generator-components/generator-container";
 import { GeneratorControls } from "@/components/generator-components/generator-controls";
-import { Heatmap } from "@/components/position-heat-map";
 import { useData } from "@/context/useDataProvider";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -29,7 +28,7 @@ export default function Home() {
           </p>
         )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4 items-start">
         <GeneratorContainer
           pastNumbers={pastNumbers}
           genOptions={genOptions}
@@ -40,9 +39,6 @@ export default function Home() {
           analysis={analysis}
           genOptions={genOptions}
         />
-      </div>
-      <div className="flex flex-col gap-y-4">
-        <Heatmap analysis={analysis} />
       </div>
     </div>
   );
