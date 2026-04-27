@@ -15,7 +15,7 @@ import type { WorkerResponse } from "@/workers/generateNumbers.worker";
 import { GeneratorProps } from "../types";
 
 interface Props extends GeneratorProps {
-  pastNumbers: LotteryTuple[] | null;
+  pastNumbers: LotteryTuple[];
   positionCounters?: Array<Record<string, number>>;
 }
 
@@ -43,8 +43,6 @@ export const GeneratorContainer = ({
   }, []);
 
   const handleGenerate = async () => {
-    if (!genOptions || !pastNumbers?.length)
-      throw new Error("Error fetching data");
     if (!workerRef.current) throw new Error("Worker not ready");
 
     setIsGenerating(true);

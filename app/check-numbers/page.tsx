@@ -19,13 +19,6 @@ const CheckNumbersPage = () => {
       const form = e.currentTarget;
       const formData = new FormData(form);
 
-      if (!Array.isArray(pastNumbers) || pastNumbers.length === 0) {
-        toast.error("No data loaded", {
-          description: "No historical numbers to check against.",
-        });
-        return;
-      }
-
       // Parse, validate, and pad input
       const nums = FIELDS.map(({ name, max }) => {
         const raw = formData.get(name);

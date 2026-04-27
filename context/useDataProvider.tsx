@@ -11,22 +11,40 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from "react";
-import { toast } from "sonner";
+import externalData from "@/public/data/external-data.json";
+
+const rawResults = externalData.results;
+if (!Array.isArray(rawResults) || rawResults.length === 0) {
+  throw new Error(
+    "external-data.json is missing or empty — run `npm run fetch:data`",
+  );
+}
+
+const pastNumbers = rawResults as LotteryTuple[];
+const dates = externalData.dates as string[];
+const updatedAt = externalData.fetchedAt as string;
+const analysis = new ThresholdCriteria(pastNumbers, false);
+
+const seededOptions: GenerateValidNumberSetOptions = {
+  ...DEFAULT_OPTIONS,
+  sumMin: analysis.sumMin,
+  sumMax: analysis.sumMax,
+  maxMainGapThreshold: analysis.maxMainGapThreshold,
+  maxLuckyGapThreshold: analysis.maxLuckyGapThreshold,
+  maxMultiplesAllowed: analysis.maxMultiplesAllowed,
+  oddRange: analysis.oddRange,
+};
 
 interface DataContextValue {
-  pastNumbers: LotteryTuple[] | null;
-  updatedAt: string | null;
-  isLoading: boolean;
-  error: string | null;
-  analysis: ThresholdCriteria | null;
-  dates: string[] | null;
+  pastNumbers: LotteryTuple[];
+  updatedAt: string;
+  analysis: ThresholdCriteria;
+  dates: string[];
   genOptions: GenerateValidNumberSetOptions;
   updateOptions: UpdateOptions;
-  refresh: () => Promise<void>;
 }
 
 interface DataProviderProps {
@@ -36,92 +54,23 @@ interface DataProviderProps {
 const dataContext = createContext<DataContextValue | null>(null);
 
 export const DataProvider = ({ children }: DataProviderProps) => {
-  const [pastNumbers, setPastNumbers] = useState<LotteryTuple[] | null>(null);
-  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
-  const [dates, setDates] = useState<string[] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [genOptions, setGenOptions] =
-    useState<GenerateValidNumberSetOptions>(DEFAULT_OPTIONS);
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/data/external-data.json", {
-        cache: "no-store",
-      });
-      if (!response.ok)
-        throw new Error(`Failed to load data. ${response.status}`);
-
-      const json = await response.json();
-
-      const pastNumbersData = json.results;
-      if (!Array.isArray(pastNumbersData) || pastNumbersData.length === 0) {
-        const message = "No historical numbers available.";
-        toast.error("No data loaded", { description: message });
-        setError(message);
-        return;
-      }
-
-      setPastNumbers(pastNumbersData);
-      setUpdatedAt(json.fetchedAt as string);
-      setDates(json.dates as string[]);
-    } catch (err) {
-      console.error("Error fetching data.", err);
-      const message =
-        err instanceof Error ? err.message : "Something went wrong";
-      setError(message);
-      setPastNumbers(null);
-      setUpdatedAt(null);
-      setDates(null);
-      toast.error("Failed to load data", { description: message });
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
-
-  const analysis = useMemo(
-    () => (pastNumbers ? new ThresholdCriteria(pastNumbers, false) : null),
-    [pastNumbers],
-  );
-
-  useEffect(() => {
-    if (!analysis) return;
-    setGenOptions({
-      ...DEFAULT_OPTIONS,
-      sumMin: analysis.sumMin,
-      sumMax: analysis.sumMax,
-      maxMainGapThreshold: analysis.maxMainGapThreshold,
-      maxLuckyGapThreshold: analysis.maxLuckyGapThreshold,
-      maxMultiplesAllowed: analysis.maxMultiplesAllowed,
-      oddRange: analysis.oddRange,
-    });
-  }, [analysis]);
+  const [genOptions, setGenOptions] = useState(seededOptions);
 
   const updateOptions = useCallback<UpdateOptions>((key, value) => {
-    setGenOptions((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setGenOptions((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  const value: DataContextValue = {
-    pastNumbers,
-    updatedAt,
-    isLoading,
-    error,
-    refresh: fetchData,
-    analysis,
-    genOptions,
-    updateOptions,
-    dates,
-  };
+  const value = useMemo(
+    () => ({
+      pastNumbers,
+      updatedAt,
+      dates,
+      analysis,
+      genOptions,
+      updateOptions,
+    }),
+    [genOptions, updateOptions],
+  );
 
   return <dataContext.Provider value={value}>{children}</dataContext.Provider>;
 };

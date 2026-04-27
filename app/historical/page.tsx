@@ -14,14 +14,11 @@ import { useData } from "@/context/useDataProvider";
 const ViewHistoricalPage = () => {
   const { pastNumbers, updatedAt, dates } = useData();
 
-  if (!pastNumbers) return <h1>Loading...</h1>;
-
   return (
     <div className="flex flex-col gap-y-4 w-full">
       <h1 className="text-2xl font-bold">Past Lottery Numbers</h1>
       <p className="text-sm font-light">
-        Last updated:{" "}
-        {updatedAt ? new Date(updatedAt).toLocaleString() : "Unknown"}
+        Last updated: {new Date(updatedAt).toLocaleString()}
       </p>
       <Table>
         <TableHeader>
@@ -35,7 +32,7 @@ const ViewHistoricalPage = () => {
         <TableBody>
           {pastNumbers.map((row, y) => (
             <TableRow key={`${y}-${row.join("-")}`}>
-              <TableCell>{dates?.[y]}</TableCell>
+              <TableCell>{dates[y]}</TableCell>
               {row.map((c, x) => (
                 <TableCell key={`${x}-${row.join("-")}`}>{c}</TableCell>
               ))}
