@@ -8,12 +8,15 @@ import {
 } from "@/components/ui/popover";
 import { useData } from "@/context/useDataProvider";
 import { countMatchesByTier } from "@/lib/lottery-match";
+import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 
 interface Props {
   userMain: string[] | null;
   userLucky: string[] | null;
 }
+
+const MAIN_COUNT = 5;
 
 export const MatchResults = ({ userMain, userLucky }: Props) => {
   const { pastNumbers, dates } = useData();
@@ -25,6 +28,9 @@ export const MatchResults = ({ userMain, userLucky }: Props) => {
         : null,
     [userMain, userLucky, pastNumbers],
   );
+
+  const userMainSet = useMemo(() => new Set(userMain ?? []), [userMain]);
+  const userLuckySet = useMemo(() => new Set(userLucky ?? []), [userLucky]);
 
   return (
     <Card className="flex flex-col gap-y-2 p-4 w-full">
@@ -44,10 +50,7 @@ export const MatchResults = ({ userMain, userLucky }: Props) => {
                 ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium"
                 : "");
             return (
-              <li
-                key={`${mainHits}-${luckyHits}`}
-                className={rowCls}
-              >
+              <li key={`${mainHits}-${luckyHits}`} className={rowCls}>
                 <span className="text-sm">
                   {mainHits} main + {luckyHits} lucky
                   {isJackpot && " (full match)"}
@@ -66,20 +69,52 @@ export const MatchResults = ({ userMain, userLucky }: Props) => {
                     </PopoverTrigger>
                     <PopoverContent
                       align="end"
-                      className="w-64 max-h-72 overflow-auto"
+                      className="w-80 max-h-80 overflow-auto"
                     >
                       <p className="text-xs font-medium mb-2">
                         {mainHits} main + {luckyHits} lucky · {label}
                       </p>
-                      <ul className="flex flex-col gap-y-1 text-xs tabular-nums">
+                      <ul className="flex flex-col gap-y-2">
                         {drawIndices
-                          .map((idx) => dates[idx])
-                          .sort((a, b) => (a < b ? 1 : a > b ? -1 : 0))
-                          .map((d, j) => (
-                            <li key={j}>
-                              {new Date(d).toLocaleDateString()}
-                            </li>
-                          ))}
+                          .slice()
+                          .sort((a, b) =>
+                            dates[a] < dates[b]
+                              ? 1
+                              : dates[a] > dates[b]
+                                ? -1
+                                : 0,
+                          )
+                          .map((idx) => {
+                            const draw = pastNumbers[idx];
+                            return (
+                              <li key={idx} className="flex flex-col gap-y-1">
+                                <span className="text-xs text-muted-foreground tabular-nums">
+                                  {new Date(dates[idx]).toLocaleDateString()}
+                                </span>
+                                <ul className="flex gap-x-1 font-mono text-xs tabular-nums">
+                                  {draw.map((n, j) => {
+                                    const isMain = j < MAIN_COUNT;
+                                    const matched = isMain
+                                      ? userMainSet.has(n)
+                                      : userLuckySet.has(n);
+                                    return (
+                                      <li
+                                        key={j}
+                                        className={cn(
+                                          "w-7 text-center rounded-sm py-0.5",
+                                          matched
+                                            ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-semibold"
+                                            : "bg-muted text-muted-foreground",
+                                        )}
+                                      >
+                                        {n}
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </li>
+                            );
+                          })}
                       </ul>
                     </PopoverContent>
                   </Popover>
