@@ -1,5 +1,6 @@
 "use client";
 
+import { ClusterDistribution } from "@/components/analysis-components/cluster-distribution";
 import { GapDistribution } from "@/components/analysis-components/gap-distribution";
 import { NumberFrequency } from "@/components/analysis-components/number-frequency";
 import { OddEvenDistribution } from "@/components/analysis-components/odd-even-distribution";
@@ -138,6 +139,8 @@ const AnalysisContent = () => {
           <OddEvenDistribution analysis={windowedAnalysis} />
 
           <GapDistribution analysis={windowedAnalysis} />
+
+          <ClusterDistribution pastNumbers={windowedPast} />
         </>
       )}
     </div>
