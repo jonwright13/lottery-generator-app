@@ -16,7 +16,7 @@ import {
 } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { BookmarkCheckIcon, BookmarkIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { WorkerResponse } from "@/workers/generateNumbers.worker";
 import { GeneratorProps } from "../types";
@@ -165,36 +165,38 @@ export const GeneratorContainer = ({
                     ? `Main ${index + 1}`
                     : `Lucky ${index - MAIN_COUNT + 1}`;
                   return (
-                    <li key={index} className="flex items-center">
-                      {!isMain && index === MAIN_COUNT && (
-                        <span
+                    <Fragment key={index}>
+                      {index === MAIN_COUNT && (
+                        <li
                           aria-hidden="true"
-                          className="mx-1 h-8 w-px bg-border"
+                          className="h-8 w-px bg-border self-center"
                         />
                       )}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span
-                            tabIndex={0}
-                            className={cn(
-                              "inline-flex items-center justify-center size-10 md:size-11 rounded-full font-semibold text-sm md:text-base select-none",
-                              "ring-1 ring-inset focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                              isMain
-                                ? "bg-sky-100 text-sky-900 ring-sky-200 dark:bg-sky-900/40 dark:text-sky-100 dark:ring-sky-800"
-                                : "bg-amber-100 text-amber-900 ring-amber-200 dark:bg-amber-900/40 dark:text-amber-100 dark:ring-amber-800",
+                      <li className="flex items-center">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span
+                              tabIndex={0}
+                              className={cn(
+                                "inline-flex items-center justify-center size-10 md:size-11 rounded-full font-semibold text-sm md:text-base select-none",
+                                "ring-1 ring-inset focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                isMain
+                                  ? "bg-sky-100 text-sky-900 ring-sky-200 dark:bg-sky-900/40 dark:text-sky-100 dark:ring-sky-800"
+                                  : "bg-amber-100 text-amber-900 ring-amber-200 dark:bg-amber-900/40 dark:text-amber-100 dark:ring-amber-800",
+                              )}
+                            >
+                              {n}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {positionLabel}
+                            {typeof score === "number" && (
+                              <> — pattern probability {score.toFixed(2)}%</>
                             )}
-                          >
-                            {n}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {positionLabel}
-                          {typeof score === "number" && (
-                            <> — pattern probability {score.toFixed(2)}%</>
-                          )}
-                        </TooltipContent>
-                      </Tooltip>
-                    </li>
+                          </TooltipContent>
+                        </Tooltip>
+                      </li>
+                    </Fragment>
                   );
                 })}
               </ol>
