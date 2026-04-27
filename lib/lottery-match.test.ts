@@ -1,9 +1,30 @@
 import { describe, expect, it } from "vitest";
 import { countMatchesByTier } from "./lottery-match";
 import type { LotteryTuple } from "./generator";
-import { MERSEYWORLD_SYNTHETIC } from "@/lib/games/merseyworld-synthetic";
+import type { GameConfig } from "@/lib/games";
 
-const GAME = MERSEYWORLD_SYNTHETIC;
+// Synthetic 5/50 + 2/11 game purpose-built for these tests so the
+// canonical 9-tier expectations stay byte-for-byte stable independent
+// of which real games are registered. Mirrors the original Merseyworld
+// synthetic feed's prizeTiers.
+const GAME: GameConfig = {
+  id: "test-5-2",
+  name: "Test 5/50 + 2/11",
+  main: { count: 5, min: 1, max: 50, label: "Main" },
+  bonus: { count: 2, min: 1, max: 11, label: "Lucky" },
+  dataPath: "/data/test.json",
+  prizeTiers: [
+    [5, 2],
+    [5, 1],
+    [5, 0],
+    [4, 2],
+    [4, 1],
+    [3, 2],
+    [4, 0],
+    [2, 2],
+    [3, 1],
+  ] as const,
+};
 
 const draw = (
   ...nums: [string, string, string, string, string, string, string]

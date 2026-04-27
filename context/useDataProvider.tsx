@@ -19,22 +19,23 @@ import {
   useMemo,
   useState,
 } from "react";
-import externalData from "@/public/data/external-data.json";
+import euromillionsData from "@/public/data/euromillions.json";
 
-// Single-game shim: the data-migration branch will swap this for a
-// per-game loader keyed off `GameConfig.dataPath`.
+// Single-game shim: the game-switcher branch will swap this static import
+// for a per-game loader keyed off `GameConfig.dataPath` so the same
+// provider can serve any registered game.
 const game: GameConfig = getDefaultGame();
 
-const rawResults = externalData.results;
+const rawResults = euromillionsData.results;
 if (!Array.isArray(rawResults) || rawResults.length === 0) {
   throw new Error(
-    "external-data.json is missing or empty — run `npm run fetch:data`",
+    `${game.dataPath} is missing or empty — run \`npm run fetch:data\``,
   );
 }
 
 const pastNumbers = rawResults as LotteryTuple[];
-const dates = externalData.dates as string[];
-const updatedAt = externalData.fetchedAt as string;
+const dates = euromillionsData.dates as string[];
+const updatedAt = euromillionsData.fetchedAt as string;
 const analysis = new ThresholdCriteria(pastNumbers, game, false);
 const fields = buildFieldsForGame(game);
 

@@ -1,5 +1,5 @@
 import type { GameConfig } from "./types";
-import { MERSEYWORLD_SYNTHETIC } from "./merseyworld-synthetic";
+import { EUROMILLIONS } from "./euromillions";
 
 export type { GameConfig, BallSet } from "./types";
 
@@ -8,9 +8,9 @@ export type { GameConfig, BallSet } from "./types";
  * switcher will render in (added in a later branch). The first entry is
  * the default game until DEFAULT_GAME_ID below is changed.
  */
-export const GAMES: readonly GameConfig[] = [MERSEYWORLD_SYNTHETIC] as const;
+export const GAMES: readonly GameConfig[] = [EUROMILLIONS] as const;
 
-export const DEFAULT_GAME_ID: string = MERSEYWORLD_SYNTHETIC.id;
+export const DEFAULT_GAME_ID: string = EUROMILLIONS.id;
 
 export const getGameById = (id: string): GameConfig | undefined =>
   GAMES.find((g) => g.id === id);
