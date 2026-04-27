@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { HelpPopover } from "@/components/ui/help-popover";
+import { useData } from "@/context/useDataProvider";
 import type { ThresholdCriteria } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +11,8 @@ interface Props {
 }
 
 export const OddEvenDistribution = ({ analysis }: Props) => {
+  const { game } = useData();
+  const mainCount = game.main.count;
   const rows = analysis.distribution;
   const maxPct = Math.max(...rows.map((r) => r.pct), 1);
   const [lo, hi] = analysis.oddRange;
@@ -22,18 +25,18 @@ export const OddEvenDistribution = ({ analysis }: Props) => {
             Odd / even split (main numbers)
           </h2>
           <p className="text-xs text-muted-foreground">
-            Share of draws by odd-number count among the 5 main numbers.
-            Highlighted rows fall inside the observed odd-count range ({lo}–
-            {hi}).
+            Share of draws by odd-number count among the {mainCount} main
+            numbers. Highlighted rows fall inside the observed odd-count
+            range ({lo}–{hi}).
           </p>
         </div>
         <HelpPopover title="Odd / even split">
           <p>
-            For each historical draw we count how many of the 5 main numbers
-            are odd (so the even count is just 5 minus that). Most real draws
-            fall in the middle — usually 1 to 4 odds. All-odd or all-even sets
-            are rare even though there&apos;s no physical reason they should
-            be.
+            For each historical draw we count how many of the {mainCount}{" "}
+            main numbers are odd (so the even count is just {mainCount} minus
+            that). Most real draws fall in the middle. All-odd or all-even
+            sets are rare even though there&apos;s no physical reason they
+            should be.
           </p>
           <p>
             <strong>Why it matters:</strong> picking an all-odd or all-even

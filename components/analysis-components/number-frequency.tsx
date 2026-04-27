@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { HelpPopover } from "@/components/ui/help-popover";
+import { useData } from "@/context/useDataProvider";
 import type { ThresholdCriteria } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
@@ -16,8 +17,6 @@ interface Entry {
   isTop: boolean;
 }
 
-const MAIN_RANGE = { min: 1, max: 50, slots: [0, 1, 2, 3, 4] };
-const LUCKY_RANGE = { min: 1, max: 11, slots: [5, 6] };
 const TOP_HIGHLIGHT = 5;
 
 const buildEntries = (
@@ -100,22 +99,39 @@ const FrequencyBars = ({
 };
 
 export const NumberFrequency = ({ analysis }: Props) => {
-  const { mainEntries, luckyEntries } = useMemo(
+  const { game } = useData();
+  const mainCount = game.main.count;
+  const bonusLabel = game.bonus.label;
+
+  const mainSlots = useMemo(
+    () => Array.from({ length: mainCount }, (_, i) => i),
+    [mainCount],
+  );
+  const bonusSlots = useMemo(
+    () =>
+      Array.from({ length: game.bonus.count }, (_, i) => mainCount + i),
+    [mainCount, game.bonus.count],
+  );
+  const hasBonus = game.bonus.count > 0;
+
+  const { mainEntries, bonusEntries } = useMemo(
     () => ({
       mainEntries: buildEntries(
         analysis.positionCounters,
-        MAIN_RANGE.slots,
-        MAIN_RANGE.min,
-        MAIN_RANGE.max,
+        mainSlots,
+        game.main.min,
+        game.main.max,
       ),
-      luckyEntries: buildEntries(
-        analysis.positionCounters,
-        LUCKY_RANGE.slots,
-        LUCKY_RANGE.min,
-        LUCKY_RANGE.max,
-      ),
+      bonusEntries: hasBonus
+        ? buildEntries(
+            analysis.positionCounters,
+            bonusSlots,
+            game.bonus.min,
+            game.bonus.max,
+          )
+        : [],
     }),
-    [analysis.positionCounters],
+    [analysis.positionCounters, mainSlots, bonusSlots, hasBonus, game.main.min, game.main.max, game.bonus.min, game.bonus.max],
   );
 
   return (
@@ -125,17 +141,24 @@ export const NumberFrequency = ({ analysis }: Props) => {
           <h2 className="text-lg font-medium">Overall number frequency</h2>
           <p className="text-xs text-muted-foreground">
             How often each number has appeared in any main slot (
-            {MAIN_RANGE.min}–{MAIN_RANGE.max}) and any lucky slot (
-            {LUCKY_RANGE.min}–{LUCKY_RANGE.max}). Top {TOP_HIGHLIGHT} per group
-            are highlighted.
+            {game.main.min}–{game.main.max})
+            {hasBonus && (
+              <>
+                {" "}and any {bonusLabel.toLowerCase()} slot ({game.bonus.min}
+                –{game.bonus.max})
+              </>
+            )}
+            . Top {TOP_HIGHLIGHT} per group are highlighted.
           </p>
         </div>
         <HelpPopover title="Overall number frequency">
           <p>
             For every ball, this counts how many historical draws it has
-            appeared in — across all main slots for the main pool and across
-            both lucky slots for the lucky pool. The {TOP_HIGHLIGHT} most-drawn
-            balls in each pool are highlighted.
+            appeared in — across all main slots for the main pool
+            {hasBonus &&
+              ` and across all ${bonusLabel.toLowerCase()} slots for the ${bonusLabel.toLowerCase()} pool`}
+            . The {TOP_HIGHLIGHT} most-drawn balls in each pool are
+            highlighted.
           </p>
           <p>
             <strong>Why it matters:</strong> in a fair draw every number is
@@ -158,15 +181,17 @@ export const NumberFrequency = ({ analysis }: Props) => {
         />
       </div>
 
-      <div className="flex flex-col gap-y-2">
-        <h3 className="text-sm font-medium text-muted-foreground">
-          Lucky numbers
-        </h3>
-        <FrequencyBars
-          entries={luckyEntries}
-          ariaLabel="Lucky number overall frequency"
-        />
-      </div>
+      {hasBonus && (
+        <div className="flex flex-col gap-y-2">
+          <h3 className="text-sm font-medium text-muted-foreground">
+            {bonusLabel} numbers
+          </h3>
+          <FrequencyBars
+            entries={bonusEntries}
+            ariaLabel={`${bonusLabel} number overall frequency`}
+          />
+        </div>
+      )}
     </Card>
   );
 };

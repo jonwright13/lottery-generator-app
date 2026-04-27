@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { HelpPopover } from "@/components/ui/help-popover";
-import { FIELDS } from "@/constants";
+import { useData } from "@/context/useDataProvider";
 import type { ThresholdCriteria } from "@/lib/generator";
 import { useMemo } from "react";
 
@@ -19,6 +19,7 @@ interface PositionTop {
 }
 
 export const TopNumbersPerPosition = ({ analysis }: Props) => {
+  const { fields } = useData();
   const positions = useMemo<PositionTop[]>(() => {
     return analysis.positionCounters.map((counter, idx) => {
       const total = Object.values(counter).reduce((a, b) => a + b, 0);
@@ -30,9 +31,9 @@ export const TopNumbersPerPosition = ({ analysis }: Props) => {
         }))
         .sort((a, b) => b.count - a.count)
         .slice(0, TOP_N);
-      return { label: FIELDS[idx]?.label ?? `P${idx + 1}`, total, entries };
+      return { label: fields[idx]?.label ?? `P${idx + 1}`, total, entries };
     });
-  }, [analysis.positionCounters]);
+  }, [analysis.positionCounters, fields]);
 
   return (
     <Card className="flex flex-col gap-y-3 p-4 w-full">
@@ -43,7 +44,7 @@ export const TopNumbersPerPosition = ({ analysis }: Props) => {
           </h2>
           <p className="text-xs text-muted-foreground">
             Top {TOP_N} numbers for each draw position after sorting (smallest
-            → largest main, then the two lucky numbers).
+            → largest main, then the bonus number(s)).
           </p>
         </div>
         <HelpPopover title="Most-drawn numbers per sorted position">

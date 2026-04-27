@@ -5,6 +5,7 @@ import {
   type LotteryTuple,
   type OddRange,
 } from "../types";
+import type { GameConfig } from "@/lib/games";
 import { generatePatternProbabilities } from "../generate-pattern-probs";
 import { percentile } from "./utils";
 
@@ -27,7 +28,7 @@ interface LastDigitDistribution {
 }
 
 interface PreviousDrawOverlap {
-  /** Distribution of "main-number overlap with the immediately prior draw" (0..5). */
+  /** Distribution of "main-number overlap with the immediately prior draw" (0..mainCount). */
   overlapDistribution: Record<number, number>;
   /** Number of consecutive-draw pairs analysed (i.e. lotteryNumbers.length - 1). */
   pairsAnalysed: number;
@@ -45,17 +46,18 @@ interface ArithmeticProgressionAnalysis {
 interface PairCoOccurrenceAnalysis {
   /** Map keyed "a,b" with a<b of how many historical draws contain both a and b in main. */
   pairCounts: Record<string, number>;
-  /** Mean pair co-occurrence count across the C(maxMain, 2) pairs that actually appear in history. */
+  /** Mean pair co-occurrence count across the C(mainMax, 2) pairs that actually appear in history. */
   meanPairCount: number;
   /** Total historical draws inspected. */
   drawsAnalysed: number;
   /** Range of values used to mainOnly-slice each tuple. */
   mainCount: number;
-  /** Highest main number considered (typically maxMain = 50). */
+  /** Highest main number considered (= GameConfig.main.max). */
   maxMain: number;
 }
 
 export class ThresholdCriteria {
+  readonly game: GameConfig;
   maxPatternProbs: Record<string, number>;
   oddRange: OddRange;
   sumMin: number;
@@ -73,7 +75,16 @@ export class ThresholdCriteria {
   arithmeticProgressionData: ArithmeticProgressionAnalysis;
   pairCoOccurrenceData: PairCoOccurrenceAnalysis;
 
-  constructor(lotteryNumbers: LotteryTuple[], debug = false) {
+  constructor(
+    lotteryNumbers: LotteryTuple[],
+    game: GameConfig,
+    debug = false,
+  ) {
+    this.game = game;
+    const mainCount = game.main.count;
+    const bonusCount = game.bonus.count;
+    const mainMax = game.main.max;
+
     this.maxPatternProbs = this.getMaxPatternProbabilities(
       lotteryNumbers,
       debug,
@@ -81,7 +92,7 @@ export class ThresholdCriteria {
 
     const [distributionAnalysis, oddRange] = this.analyzeOddEvenDistribution(
       lotteryNumbers,
-      true,
+      mainCount,
       debug,
     );
     this.distribution = distributionAnalysis;
@@ -89,7 +100,7 @@ export class ThresholdCriteria {
 
     const [sumMin, sumMax] = this.analyzeSumRange(
       lotteryNumbers,
-      5,
+      mainCount,
       15,
       85,
       debug,
@@ -99,8 +110,8 @@ export class ThresholdCriteria {
 
     const { gapData, range } = this.determineGapThresholds(
       lotteryNumbers,
-      5,
-      2,
+      mainCount,
+      bonusCount,
       95,
     );
     this.gapDistributionData = gapData;
@@ -109,37 +120,37 @@ export class ThresholdCriteria {
 
     this.maxMultiplesAllowed = this.generateMaxMultiplesAllowed(
       lotteryNumbers,
+      mainCount,
       Array.from({ length: 9 }, (_, i) => i + 2), // 2..10
-      true,
       debug,
     );
 
     this.positionCounters = this.getPositionCounters(lotteryNumbers);
 
     const { distribution: lastDigitDist, maxAllowed: lastDigitMax } =
-      this.analyzeLastDigitDistribution(lotteryNumbers, true, 95);
+      this.analyzeLastDigitDistribution(lotteryNumbers, mainCount, 95);
     this.lastDigitDistributionData = lastDigitDist;
     this.maxSameLastDigit = lastDigitMax;
 
     const { distribution: overlapDist, maxAllowed: overlapMax } =
-      this.analyzePreviousDrawOverlap(lotteryNumbers, true, 95);
+      this.analyzePreviousDrawOverlap(lotteryNumbers, mainCount, 95);
     this.previousDrawOverlapData = overlapDist;
     this.maxPreviousDrawOverlap = overlapMax;
 
     this.arithmeticProgressionData =
-      this.analyzeArithmeticProgressionDistribution(lotteryNumbers, true);
+      this.analyzeArithmeticProgressionDistribution(lotteryNumbers, mainCount);
 
     this.pairCoOccurrenceData = this.analyzePairCoOccurrence(
       lotteryNumbers,
-      5,
-      50,
+      mainCount,
+      mainMax,
     );
   }
 
   analyzePairCoOccurrence(
     lotteryNumbers: LotteryTuple[],
-    mainCount = 5,
-    maxMain = 50,
+    mainCount: number,
+    maxMain: number,
   ): PairCoOccurrenceAnalysis {
     const pairCounts: Record<string, number> = {};
 
@@ -172,15 +183,14 @@ export class ThresholdCriteria {
 
   analyzeArithmeticProgressionDistribution(
     lotteryNumbers: LotteryTuple[],
-    mainOnly = true,
+    mainCount: number,
   ): ArithmeticProgressionAnalysis {
-    const lengthToCheck = mainOnly ? 5 : lotteryNumbers[0]?.length ?? 0;
     const drawsByDiff: Record<number, number> = {};
     let drawsWithAp3 = 0;
 
     for (const draw of lotteryNumbers) {
       const nums = draw
-        .slice(0, lengthToCheck)
+        .slice(0, mainCount)
         .map((n) => parseInt(n, 10))
         .sort((a, b) => a - b);
       const set = new Set(nums);
@@ -209,29 +219,28 @@ export class ThresholdCriteria {
 
   analyzePreviousDrawOverlap(
     lotteryNumbers: LotteryTuple[],
-    mainOnly = true,
+    mainCount: number,
     percentileValue = 95,
   ): { distribution: PreviousDrawOverlap; maxAllowed: number } {
     const overlapDistribution: Record<number, number> = {};
     const overlaps: number[] = [];
-    const lengthToCheck = mainOnly ? 5 : lotteryNumbers[0]?.length ?? 0;
 
     for (let i = 0; i < lotteryNumbers.length - 1; i++) {
-      const a = new Set(lotteryNumbers[i].slice(0, lengthToCheck));
-      const b = lotteryNumbers[i + 1].slice(0, lengthToCheck);
+      const a = new Set(lotteryNumbers[i].slice(0, mainCount));
+      const b = lotteryNumbers[i + 1].slice(0, mainCount);
       let overlap = 0;
       for (const n of b) if (a.has(n)) overlap += 1;
       overlaps.push(overlap);
       overlapDistribution[overlap] = (overlapDistribution[overlap] ?? 0) + 1;
     }
 
-    for (let k = 0; k <= lengthToCheck; k++) {
+    for (let k = 0; k <= mainCount; k++) {
       if (!(k in overlapDistribution)) overlapDistribution[k] = 0;
     }
 
     const maxAllowed = overlaps.length
       ? Math.floor(percentile(overlaps, percentileValue))
-      : lengthToCheck;
+      : mainCount;
 
     return {
       distribution: {
@@ -244,18 +253,17 @@ export class ThresholdCriteria {
 
   analyzeLastDigitDistribution(
     lotteryNumbers: LotteryTuple[],
-    mainOnly = true,
+    mainCount: number,
     percentileValue = 95,
   ): { distribution: LastDigitDistribution; maxAllowed: number } {
     const perDigitTotals: Record<number, number> = {};
     for (let d = 0; d <= 9; d++) perDigitTotals[d] = 0;
     const maxRepeatDistribution: Record<number, number> = {};
     const maxRepeats: number[] = [];
-    const lengthToCheck = mainOnly ? 5 : lotteryNumbers[0]?.length ?? 0;
 
     for (const draw of lotteryNumbers) {
       const perDraw: Record<number, number> = {};
-      for (let i = 0; i < lengthToCheck; i++) {
+      for (let i = 0; i < mainCount; i++) {
         const lastDigit = parseInt(draw[i], 10) % 10;
         perDraw[lastDigit] = (perDraw[lastDigit] ?? 0) + 1;
         perDigitTotals[lastDigit] += 1;
@@ -268,7 +276,7 @@ export class ThresholdCriteria {
 
     const maxAllowed = maxRepeats.length
       ? Math.floor(percentile(maxRepeats, percentileValue))
-      : lengthToCheck;
+      : mainCount;
 
     return {
       distribution: { perDigitTotals, maxRepeatDistribution },
@@ -324,7 +332,7 @@ export class ThresholdCriteria {
     lotteryNumbers: LotteryTuple[],
     debug = true,
   ): Record<string, number> {
-    const numPositions = lotteryNumbers[0].length ?? 7;
+    const numPositions = lotteryNumbers[0]?.length ?? 0;
 
     // Position counters: one per index, counting occurrences of each value
     const positionCounters: Array<Record<string, number>> = Array.from(
@@ -349,7 +357,11 @@ export class ThresholdCriteria {
       probs.push(prob);
     });
 
-    const patternProb = generatePatternProbabilities(probs);
+    const patternProb = generatePatternProbabilities(
+      probs,
+      this.game.main.count,
+      this.game.bonus.count,
+    );
 
     if (debug) {
       console.log("\nMax Pattern Probabilities Possible");
@@ -364,6 +376,7 @@ export class ThresholdCriteria {
   private getTopNumbersHistorical(
     lotteryNumbers: LotteryTuple[],
   ): LotteryTuple {
+    const expected = this.game.main.count + this.game.bonus.count;
     const topNumbers: string[] = [];
 
     for (let index = 0; index < lotteryNumbers[0].length; index++) {
@@ -379,34 +392,25 @@ export class ThresholdCriteria {
       topNumbers.push(mostCommonKey);
     }
 
-    if (topNumbers.length !== 7) {
+    if (topNumbers.length !== expected) {
       throw new Error(
-        `Expected 7-position lottery tuple, got ${topNumbers.length}`,
+        `Expected ${expected}-position lottery tuple for game "${this.game.id}", got ${topNumbers.length}`,
       );
     }
 
-    return [
-      topNumbers[0],
-      topNumbers[1],
-      topNumbers[2],
-      topNumbers[3],
-      topNumbers[4],
-      topNumbers[5],
-      topNumbers[6],
-    ];
+    return topNumbers;
   }
 
   analyzeOddEvenDistribution(
     lotteryNumbers: LotteryTuple[],
-    mainOnly = true,
+    mainCount: number,
     debug = false,
   ): [DistributionAnalysis[], OddRange] {
     const distribution: Record<number, number> = {};
     const distributionAnalysis: DistributionAnalysis[] = [];
-    const lengthToCheck = mainOnly ? 5 : lotteryNumbers[0].length;
 
     for (const draw of lotteryNumbers) {
-      const numbers = draw.slice(0, lengthToCheck).map((n) => parseInt(n, 10));
+      const numbers = draw.slice(0, mainCount).map((n) => parseInt(n, 10));
       const oddCount = numbers.reduce(
         (acc, num) => acc + (num % 2 === 1 ? 1 : 0),
         0,
@@ -416,10 +420,10 @@ export class ThresholdCriteria {
 
     const totalDraws = lotteryNumbers.length;
 
-    for (let oddCount = 0; oddCount <= lengthToCheck; oddCount++) {
+    for (let oddCount = 0; oddCount <= mainCount; oddCount++) {
       const count = distribution[oddCount] ?? 0;
       const pct = totalDraws ? (count / totalDraws) * 100 : 0;
-      const evenCount = lengthToCheck - oddCount;
+      const evenCount = mainCount - oddCount;
       distributionAnalysis.push({
         label: `${oddCount} odd / ${evenCount} even`,
         oddCount,
@@ -457,7 +461,7 @@ export class ThresholdCriteria {
 
   analyzeSumRange(
     lotteryNumbers: LotteryTuple[],
-    mainCount = 5,
+    mainCount: number,
     lowerPercentile = 15,
     upperPercentile = 85,
     debug = false,
@@ -497,8 +501,8 @@ export class ThresholdCriteria {
 
   determineGapThresholds(
     lotteryNumbers: LotteryTuple[],
-    countMain = 5,
-    countLucky = 2,
+    countMain: number,
+    countLucky: number,
     percentileValue = 95,
   ): { gapData: GapDistribution; range: [number, number] } {
     const gapData = this.analyzeGapDistribution(
@@ -546,11 +550,11 @@ export class ThresholdCriteria {
 
   analyzeGapDistribution(
     lotteryNumbers: LotteryTuple[],
-    countMain = 5,
-    countLucky = 2,
+    countMain: number,
+    countLucky: number,
   ): GapDistribution {
     const mainGapCounters: Array<Record<number, number>> = Array.from(
-      { length: countMain - 1 },
+      { length: Math.max(0, countMain - 1) },
       () => ({}),
     );
     const luckyGapCounters: Array<Record<number, number>> =
@@ -586,8 +590,8 @@ export class ThresholdCriteria {
 
   generateMaxMultiplesAllowed(
     lotteryNumbers: LotteryTuple[],
+    mainCount: number,
     bases: number[] = Array.from({ length: 9 }, (_, i) => i + 2), // 2..10
-    mainOnly = true,
     debug = false,
   ): Record<number, number> {
     const maxMultiplesDict: Record<number, number> = {};
@@ -595,8 +599,8 @@ export class ThresholdCriteria {
     for (const base of bases) {
       const { maxAllowed } = this.analyzeMultiplesDistribution(
         lotteryNumbers,
+        mainCount,
         base,
-        mainOnly,
         debug,
       );
       maxMultiplesDict[base] = maxAllowed;
@@ -614,18 +618,17 @@ export class ThresholdCriteria {
 
   analyzeMultiplesDistribution(
     lotteryNumbers: LotteryTuple[],
+    mainCount: number,
     base = 3,
-    mainOnly = true,
     debug = false,
   ): MultiplesDistributionResult {
     const distribution: Record<number, number> = {};
     const exampleDraws: LotteryTuple[] = [];
 
-    const lengthToCheck = mainOnly ? 5 : lotteryNumbers[0].length;
     const multiplesCounts: number[] = [];
 
     for (const draw of lotteryNumbers) {
-      const numbers = draw.slice(0, lengthToCheck).map((n) => parseInt(n, 10));
+      const numbers = draw.slice(0, mainCount).map((n) => parseInt(n, 10));
 
       const countMultiples = numbers.reduce(
         (acc, num) => acc + (num % base === 0 ? 1 : 0),
@@ -644,9 +647,7 @@ export class ThresholdCriteria {
 
     if (debug) {
       console.log(
-        `\nAnalyzing multiples of ${base} in ${
-          mainOnly ? "main numbers only" : "all numbers"
-        }:\n`,
+        `\nAnalyzing multiples of ${base} in main numbers:\n`,
       );
     }
 

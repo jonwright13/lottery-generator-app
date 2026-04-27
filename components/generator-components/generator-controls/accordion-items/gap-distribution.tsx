@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useData } from "@/context/useDataProvider";
 import { cn } from "@/lib/utils";
 import { TableItemProps } from "../types";
 
@@ -20,6 +21,9 @@ export const GapDistributionItem = ({
   genOptions,
   updateOptions,
 }: TableItemProps) => {
+  const { game } = useData();
+  const bonusLabel = game.bonus.label;
+  const showBonus = game.bonus.count > 1;
   const handleGapChange = (
     key: "maxMainGapThreshold" | "maxLuckyGapThreshold",
     gap: number,
@@ -93,14 +97,15 @@ export const GapDistributionItem = ({
             </Table>
           </AccordionContent>
         </AccordionItem>
+        {showBonus && (
         <AccordionItem value="lucky-gap-dist">
-          <AccordionTrigger>Lucky Numbers</AccordionTrigger>
+          <AccordionTrigger>{bonusLabel} Numbers</AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
             <p>
-              Each column represents the gap between two adjacent lucky numbers
-              after sorting. Rows show how frequently a given gap size appears
-              across historical draws. Selecting row to adjust the max gap size
-              used in generation.
+              Each column represents the gap between two adjacent{" "}
+              {bonusLabel.toLowerCase()} numbers after sorting. Rows show how
+              frequently a given gap size appears across historical draws.
+              Selecting row to adjust the max gap size used in generation.
             </p>
             <Table>
               <TableHeader>
@@ -134,6 +139,7 @@ export const GapDistributionItem = ({
             </Table>
           </AccordionContent>
         </AccordionItem>
+        )}
       </Accordion>
     </>
   );

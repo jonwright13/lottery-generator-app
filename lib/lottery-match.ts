@@ -1,3 +1,4 @@
+import type { GameConfig } from "@/lib/games";
 import type { LotteryTuple } from "@/lib/generator";
 
 export interface MatchTier {
@@ -7,41 +8,32 @@ export interface MatchTier {
   drawIndices: number[];
 }
 
-// Ordered by descending prize-tier significance, mirroring the taxonomy in
-// generate-pattern-probs.ts but collapsed to set-based matching (no
-// positional special_1/special_2 distinction — actual lottery prizes don't
-// care which of your two lucky numbers landed).
-const TIER_ORDER: ReadonlyArray<[number, number]> = [
-  [5, 2],
-  [5, 1],
-  [5, 0],
-  [4, 2],
-  [4, 1],
-  [3, 2],
-  [4, 0],
-  [2, 2],
-  [3, 1],
-];
-
-const MAIN_COUNT = 5;
-
+/**
+ * Count how many historical draws fall into each prize tier when matched
+ * against the user's mains + bonuses. Tier order and significance comes
+ * from `game.prizeTiers` so that swapping games (Lotto vs EuroMillions vs
+ * Set For Life) automatically rewires which (mainHits, luckyHits) rows
+ * appear and in what order.
+ */
 export function countMatchesByTier(
   userMain: string[],
   userLucky: string[],
   draws: LotteryTuple[],
+  game: GameConfig,
 ): MatchTier[] {
   const userMainSet = new Set(userMain);
   const userLuckySet = new Set(userLucky);
   const indices = new Map<string, number[]>();
+  const mainCount = game.main.count;
 
   for (let i = 0; i < draws.length; i++) {
     const draw = draws[i];
     let mainHits = 0;
-    for (let j = 0; j < MAIN_COUNT; j++) {
+    for (let j = 0; j < mainCount; j++) {
       if (userMainSet.has(draw[j])) mainHits++;
     }
     let luckyHits = 0;
-    for (let j = MAIN_COUNT; j < draw.length; j++) {
+    for (let j = mainCount; j < draw.length; j++) {
       if (userLuckySet.has(draw[j])) luckyHits++;
     }
     const key = `${mainHits},${luckyHits}`;
@@ -53,7 +45,7 @@ export function countMatchesByTier(
     }
   }
 
-  return TIER_ORDER.map(([mainHits, luckyHits]) => {
+  return game.prizeTiers.map(([mainHits, luckyHits]) => {
     const drawIndices = indices.get(`${mainHits},${luckyHits}`) ?? [];
     return {
       mainHits,

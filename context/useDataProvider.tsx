@@ -8,6 +8,11 @@ import {
   DEFAULT_OPTIONS,
 } from "@/lib/generator";
 import {
+  type GameConfig,
+  getDefaultGame,
+} from "@/lib/games";
+import { buildFieldsForGame, type FieldDef } from "@/constants";
+import {
   createContext,
   useCallback,
   useContext,
@@ -15,6 +20,10 @@ import {
   useState,
 } from "react";
 import externalData from "@/public/data/external-data.json";
+
+// Single-game shim: the data-migration branch will swap this for a
+// per-game loader keyed off `GameConfig.dataPath`.
+const game: GameConfig = getDefaultGame();
 
 const rawResults = externalData.results;
 if (!Array.isArray(rawResults) || rawResults.length === 0) {
@@ -26,10 +35,17 @@ if (!Array.isArray(rawResults) || rawResults.length === 0) {
 const pastNumbers = rawResults as LotteryTuple[];
 const dates = externalData.dates as string[];
 const updatedAt = externalData.fetchedAt as string;
-const analysis = new ThresholdCriteria(pastNumbers, false);
+const analysis = new ThresholdCriteria(pastNumbers, game, false);
+const fields = buildFieldsForGame(game);
 
 const seededOptions: GenerateValidNumberSetOptions = {
   ...DEFAULT_OPTIONS,
+  minMain: game.main.min,
+  maxMain: game.main.max,
+  countMain: game.main.count,
+  minLucky: game.bonus.min,
+  maxLucky: game.bonus.max,
+  countLucky: game.bonus.count,
   sumMin: analysis.sumMin,
   sumMax: analysis.sumMax,
   maxMainGapThreshold: analysis.maxMainGapThreshold,
@@ -41,6 +57,8 @@ const seededOptions: GenerateValidNumberSetOptions = {
 };
 
 interface DataContextValue {
+  game: GameConfig;
+  fields: FieldDef[];
   pastNumbers: LotteryTuple[];
   updatedAt: string;
   analysis: ThresholdCriteria;
@@ -64,6 +82,8 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   const value = useMemo(
     () => ({
+      game,
+      fields,
       pastNumbers,
       updatedAt,
       dates,

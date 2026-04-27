@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { HelpPopover } from "@/components/ui/help-popover";
+import { useData } from "@/context/useDataProvider";
 import type { LotteryTuple } from "@/lib/generator";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
@@ -21,37 +22,43 @@ interface NumberRow {
   delta: number;
 }
 
-const MAIN_COUNT = 5;
-const MAIN_MAX = 50;
 const DEFAULT_WINDOW = 50;
 
 const accumulate = (
   pastNumbers: LotteryTuple[],
   count: number,
+  mainCount: number,
+  mainMax: number,
 ): { counts: number[]; draws: number } => {
   const slice = pastNumbers.slice(0, count);
-  const counts = new Array<number>(MAIN_MAX + 1).fill(0);
+  const counts = new Array<number>(mainMax + 1).fill(0);
   for (const draw of slice) {
-    for (let i = 0; i < MAIN_COUNT; i++) {
+    for (let i = 0; i < mainCount; i++) {
       const n = parseInt(draw[i], 10);
-      if (n >= 1 && n <= MAIN_MAX) counts[n] += 1;
+      if (n >= 1 && n <= mainMax) counts[n] += 1;
     }
   }
   return { counts, draws: slice.length };
 };
 
 export const HotColdNumbers = ({ pastNumbers }: Props) => {
+  const { game } = useData();
+  const mainCount = game.main.count;
+  const mainMax = game.main.max;
   const totalDraws = pastNumbers.length;
   const defaultWindow = Math.min(DEFAULT_WINDOW, totalDraws);
   const [windowSize, setWindowSize] = useState(defaultWindow);
   const safeWindow = Math.max(1, Math.min(windowSize, totalDraws));
+  // Expected per-number share if numbers were drawn uniformly; used in the
+  // footer to set context against the observed recent rate.
+  const expectedPct = (mainCount / mainMax) * 100;
 
   const { rows, hottest, coldest, recentMeanPct } = useMemo(() => {
-    const recent = accumulate(pastNumbers, safeWindow);
-    const allTime = accumulate(pastNumbers, totalDraws);
+    const recent = accumulate(pastNumbers, safeWindow, mainCount, mainMax);
+    const allTime = accumulate(pastNumbers, totalDraws, mainCount, mainMax);
 
     const rows: NumberRow[] = [];
-    for (let n = 1; n <= MAIN_MAX; n++) {
+    for (let n = 1; n <= mainMax; n++) {
       const recentCount = recent.counts[n];
       const allTimeCount = allTime.counts[n];
       const recentPct =
@@ -74,7 +81,7 @@ export const HotColdNumbers = ({ pastNumbers }: Props) => {
       rows.reduce((acc, r) => acc + r.recentPct, 0) / rows.length;
 
     return { rows, hottest, coldest, recentMeanPct };
-  }, [pastNumbers, safeWindow, totalDraws]);
+  }, [pastNumbers, safeWindow, totalDraws, mainCount, mainMax]);
 
   const maxDelta = Math.max(...rows.map((r) => Math.abs(r.delta)), 1);
 
@@ -235,7 +242,8 @@ export const HotColdNumbers = ({ pastNumbers }: Props) => {
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs md:text-sm border-t pt-3">
         <dt className="text-muted-foreground">Mean recent rate</dt>
         <dd className="text-right tabular-nums">
-          {recentMeanPct.toFixed(2)}% (10% expected for 5/50 main draws)
+          {recentMeanPct.toFixed(2)}% ({expectedPct.toFixed(1)}% expected for{" "}
+          {mainCount}/{mainMax} main draws)
         </dd>
       </dl>
     </Card>

@@ -43,6 +43,7 @@ export default function AnalysisPage() {
 
 const AnalysisContent = () => {
   const {
+    game,
     pastNumbers,
     dates,
     analysis: fullAnalysis,
@@ -82,13 +83,13 @@ const AnalysisContent = () => {
     }
     const wp = idx.map((i) => pastNumbers[i]);
     const wd = idx.map((i) => dates[i]);
-    const wa = wp.length > 0 ? new ThresholdCriteria(wp, false) : fullAnalysis;
+    const wa = wp.length > 0 ? new ThresholdCriteria(wp, game, false) : fullAnalysis;
     return {
       windowedPast: wp,
       windowedDates: wd,
       windowedAnalysis: wa,
     };
-  }, [pastNumbers, dates, fullAnalysis, windowKey]);
+  }, [pastNumbers, dates, fullAnalysis, windowKey, game]);
 
   const updatedLabel = (() => {
     const d = new Date(updatedAt);

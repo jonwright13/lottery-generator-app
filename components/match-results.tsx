@@ -21,8 +21,6 @@ interface Props {
   userLucky: string[] | null;
 }
 
-const MAIN_COUNT = 5;
-
 const computeCutoff = (years: number): string => {
   const d = new Date();
   d.setFullYear(d.getFullYear() - years);
@@ -30,7 +28,9 @@ const computeCutoff = (years: number): string => {
 };
 
 export const MatchResults = ({ userMain, userLucky }: Props) => {
-  const { pastNumbers, dates } = useData();
+  const { game, pastNumbers, dates } = useData();
+  const mainCount = game.main.count;
+  const bonusLabel = game.bonus.label.toLowerCase();
   const [windowKey, setWindowKey] = useState<WindowKey>("all");
 
   const { windowedPast, windowedDates } = useMemo(() => {
@@ -52,9 +52,9 @@ export const MatchResults = ({ userMain, userLucky }: Props) => {
   const tiers = useMemo(
     () =>
       userMain && userLucky
-        ? countMatchesByTier(userMain, userLucky, windowedPast)
+        ? countMatchesByTier(userMain, userLucky, windowedPast, game)
         : null,
-    [userMain, userLucky, windowedPast],
+    [userMain, userLucky, windowedPast, game],
   );
 
   const userMainSet = useMemo(() => new Set(userMain ?? []), [userMain]);
@@ -104,7 +104,7 @@ export const MatchResults = ({ userMain, userLucky }: Props) => {
             return (
               <li key={`${mainHits}-${luckyHits}`} className={rowCls}>
                 <span className="text-sm">
-                  {mainHits} main + {luckyHits} lucky
+                  {mainHits} main + {luckyHits} {bonusLabel}
                   {isJackpot && " (full match)"}
                 </span>
                 {draws === 0 ? (
@@ -124,7 +124,7 @@ export const MatchResults = ({ userMain, userLucky }: Props) => {
                       className="w-80 max-h-80 overflow-auto"
                     >
                       <p className="text-xs font-medium mb-2">
-                        {mainHits} main + {luckyHits} lucky · {label}
+                        {mainHits} main + {luckyHits} {bonusLabel} · {label}
                       </p>
                       <ul className="flex flex-col gap-y-2">
                         {drawIndices
@@ -147,7 +147,7 @@ export const MatchResults = ({ userMain, userLucky }: Props) => {
                                 </span>
                                 <ul className="flex gap-x-1 font-mono text-xs tabular-nums">
                                   {draw.map((n, j) => {
-                                    const isMain = j < MAIN_COUNT;
+                                    const isMain = j < mainCount;
                                     const matched = isMain
                                       ? userMainSet.has(n)
                                       : userLuckySet.has(n);
