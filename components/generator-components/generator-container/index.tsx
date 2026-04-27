@@ -1,6 +1,7 @@
 "use client";
 
 import { CopyToClipboardButton } from "@/components/copy-to-clipboard-button";
+import { GeneratedStats } from "@/components/generator-components/generated-stats";
 import { MatchResults } from "@/components/match-results";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -258,6 +259,14 @@ export const GeneratorContainer = ({
           </>
         )}
       </Card>
+
+      {combination && (
+        <GeneratedStats
+          combination={combination}
+          bestPatternProb={results?.bestPatternProb ?? null}
+          genOptions={genOptions}
+        />
+      )}
 
       {combination && (
         <MatchResults userMain={userMain} userLucky={userLucky} />
