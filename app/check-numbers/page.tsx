@@ -64,6 +64,37 @@ const CheckNumbersPage = () => {
     }
   };
 
+  const handlePaste = (
+    e: React.ClipboardEvent<HTMLInputElement>,
+    startName: string,
+  ) => {
+    const text = e.clipboardData.getData("text");
+    // Split on whitespace and commas; drop tokens that aren't pure digits
+    // (so an ISO date like "2026-04-24" pasted from the historical table is
+    // skipped entirely rather than mangled into 2026 / 04 / 24).
+    const tokens = text.split(/[\s,]+/).filter((t) => /^\d+$/.test(t));
+    if (tokens.length < 2) return;
+
+    const startIdx = FIELDS.findIndex((f) => f.name === startName);
+    if (startIdx < 0) return;
+
+    e.preventDefault();
+    setValues((prev) => {
+      const next = { ...prev };
+      let cursor = startIdx;
+      for (const tok of tokens) {
+        if (cursor >= FIELDS.length) break;
+        const { name, max } = FIELDS[cursor];
+        const n = Number(tok);
+        if (Number.isInteger(n) && n >= 1 && n <= max) {
+          next[name] = String(n);
+        }
+        cursor++;
+      }
+      return next;
+    });
+  };
+
   return (
     <>
       <h1 className="text-2xl font-bold mx-auto md:mx-0">Check Numbers</h1>
@@ -92,6 +123,7 @@ const CheckNumbersPage = () => {
                     onChange={(e) =>
                       setValues((v) => ({ ...v, [name]: e.target.value }))
                     }
+                    onPaste={(e) => handlePaste(e, name)}
                     className="border rounded-sm px-2 py-1 w-8 md:w-12 text-center text-sm md:text-base"
                     onWheel={(e) => e.currentTarget.blur()}
                   />
