@@ -131,3 +131,17 @@ export function isSumInRange(
   const total = mainNums.reduce((acc, n) => acc + n, 0);
   return total >= minSum && total <= maxSum;
 }
+/**
+ * Returns the largest count of numbers sharing the same last digit (0..9).
+ */
+
+export function maxSameLastDigitCount(numbers: number[]): number {
+  const counts: Record<number, number> = {};
+  let max = 0;
+  for (const n of numbers) {
+    const d = n % 10;
+    counts[d] = (counts[d] ?? 0) + 1;
+    if (counts[d] > max) max = counts[d];
+  }
+  return max;
+}

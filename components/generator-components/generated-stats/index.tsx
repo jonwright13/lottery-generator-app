@@ -53,6 +53,18 @@ export const GeneratedStats = ({
     const maxMainGap = maxConsecutiveGap(sortedMain);
     const maxLuckyGap = maxConsecutiveGap(sortedLucky);
 
+    const lastDigitCounts: Record<number, number> = {};
+    let maxSameLastDigit = 0;
+    let maxSameLastDigitValue = 0;
+    for (const n of main) {
+      const d = n % 10;
+      lastDigitCounts[d] = (lastDigitCounts[d] ?? 0) + 1;
+      if (lastDigitCounts[d] > maxSameLastDigit) {
+        maxSameLastDigit = lastDigitCounts[d];
+        maxSameLastDigitValue = d;
+      }
+    }
+
     const groupSize = genOptions.clusterGroupSize;
     const numGroups = Math.ceil(genOptions.maxMain / groupSize);
     const clusters: ClusterBar[] = Array.from({ length: numGroups }, (_, i) => ({
@@ -72,6 +84,8 @@ export const GeneratedStats = ({
       maxMainGap,
       maxLuckyGap,
       clusters,
+      maxSameLastDigit,
+      maxSameLastDigitValue,
     };
   }, [combination, genOptions]);
 
@@ -82,6 +96,7 @@ export const GeneratedStats = ({
   const mainGapOk = stats.maxMainGap <= genOptions.maxMainGapThreshold;
   const luckyGapOk = stats.maxLuckyGap <= genOptions.maxLuckyGapThreshold;
   const clusterOk = stats.clusters.every((c) => c.count <= genOptions.clusterMax);
+  const lastDigitOk = stats.maxSameLastDigit <= genOptions.maxSameLastDigit;
 
   const positionLabels = [
     "Main 1",
@@ -165,6 +180,15 @@ export const GeneratedStats = ({
         <dd className="text-right tabular-nums">{stats.maxLuckyGap}</dd>
         <dd className={cn("text-right tabular-nums", inBandClass(luckyGapOk))}>
           {luckyGapOk ? "≤" : ">"} {genOptions.maxLuckyGapThreshold}
+        </dd>
+
+        <dt className="text-muted-foreground">Max same last digit</dt>
+        <dd className="text-right tabular-nums">
+          {stats.maxSameLastDigit}
+          {stats.maxSameLastDigit > 1 && ` (·${stats.maxSameLastDigitValue})`}
+        </dd>
+        <dd className={cn("text-right tabular-nums", inBandClass(lastDigitOk))}>
+          {lastDigitOk ? "≤" : ">"} {genOptions.maxSameLastDigit}
         </dd>
       </dl>
 

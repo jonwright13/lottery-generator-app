@@ -32,6 +32,7 @@ export interface RejectionCounts {
   gap_exceeds_threshold: number;
   sum_in_range: number;
   historical_duplicate: number;
+  last_digit_repeat: number;
 }
 
 export interface GenerateValidNumberSetResult {
@@ -64,5 +65,6 @@ export interface GenerateValidNumberSetOptions {
   maxMultiplesAllowed: Record<number, number>;
   clusterMax: number;
   clusterGroupSize: number;
+  maxSameLastDigit: number;
   debug: boolean;
 }
