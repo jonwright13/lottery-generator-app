@@ -1,5 +1,6 @@
 "use client";
 
+import { ArithmeticProgressionDistribution } from "@/components/analysis-components/arithmetic-progression-distribution";
 import { ClusterDistribution } from "@/components/analysis-components/cluster-distribution";
 import { GapDistribution } from "@/components/analysis-components/gap-distribution";
 import { LastDigitDistribution } from "@/components/analysis-components/last-digit-distribution";
@@ -147,6 +148,8 @@ const AnalysisContent = () => {
           <LastDigitDistribution analysis={windowedAnalysis} />
 
           <PreviousDrawOverlap analysis={windowedAnalysis} />
+
+          <ArithmeticProgressionDistribution analysis={windowedAnalysis} />
         </>
       )}
     </div>

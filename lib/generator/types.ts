@@ -34,6 +34,7 @@ export interface RejectionCounts {
   historical_duplicate: number;
   last_digit_repeat: number;
   previous_draw_overlap: number;
+  arithmetic_progression: number;
 }
 
 export interface GenerateValidNumberSetResult {

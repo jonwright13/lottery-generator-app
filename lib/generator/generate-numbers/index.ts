@@ -24,6 +24,7 @@ const emptyRejectionCounts = (): RejectionCounts => ({
   historical_duplicate: 0,
   last_digit_repeat: 0,
   previous_draw_overlap: 0,
+  arithmetic_progression: 0,
 });
 
 function buildPositionCounters(

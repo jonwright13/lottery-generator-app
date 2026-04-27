@@ -87,6 +87,19 @@ export const GeneratedStats = ({
       }
     }
 
+    const sortedMainSet = new Set(sortedMain);
+    let ap3Diff: number | null = null;
+    outer: for (let i = 0; i < sortedMain.length; i++) {
+      for (let j = i + 1; j < sortedMain.length; j++) {
+        const d = sortedMain[j] - sortedMain[i];
+        if (d < 2) continue;
+        if (sortedMainSet.has(sortedMain[i] + 2 * d)) {
+          ap3Diff = d;
+          break outer;
+        }
+      }
+    }
+
     return {
       sum,
       oddCount,
@@ -97,6 +110,7 @@ export const GeneratedStats = ({
       maxSameLastDigit,
       maxSameLastDigitValue,
       previousOverlap,
+      ap3Diff,
     };
   }, [combination, genOptions, previousDraw]);
 
@@ -110,6 +124,7 @@ export const GeneratedStats = ({
   const lastDigitOk = stats.maxSameLastDigit <= genOptions.maxSameLastDigit;
   const overlapOk =
     stats.previousOverlap <= genOptions.maxPreviousDrawOverlap;
+  const ap3Ok = stats.ap3Diff === null;
 
   const positionLabels = [
     "Main 1",
@@ -215,6 +230,14 @@ export const GeneratedStats = ({
             </dd>
           </>
         )}
+
+        <dt className="text-muted-foreground">Arithmetic progression</dt>
+        <dd className="text-right tabular-nums">
+          {stats.ap3Diff === null ? "none" : `d = ${stats.ap3Diff}`}
+        </dd>
+        <dd className={cn("text-right tabular-nums", inBandClass(ap3Ok))}>
+          {ap3Ok ? "no AP-3" : "AP-3 present"}
+        </dd>
       </dl>
 
       <div className="flex flex-col gap-y-2 border-t pt-3">
