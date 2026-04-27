@@ -112,6 +112,17 @@ describe("countMaxConsecutiveRun", () => {
   it("returns the run length when the entire array is consecutive", () => {
     expect(countMaxConsecutiveRun([10, 11, 12, 13])).toBe(4);
   });
+
+  it("does not depend on input order (sorts defensively)", () => {
+    expect(countMaxConsecutiveRun([8, 1, 7, 2, 3])).toBe(3);
+    expect(countMaxConsecutiveRun([20, 8, 7, 6, 5, 2, 1])).toBe(4);
+  });
+
+  it("does not mutate the input array", () => {
+    const xs = [3, 1, 2];
+    countMaxConsecutiveRun(xs);
+    expect(xs).toEqual([3, 1, 2]);
+  });
 });
 
 describe("generateRandomNumber", () => {

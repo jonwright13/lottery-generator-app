@@ -12,7 +12,11 @@ export default function Home() {
     <div className="flex flex-col gap-y-4 w-full justify-center">
       <h1 className="text-2xl font-bold">Generate Numbers</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
-        <GeneratorContainer pastNumbers={pastNumbers} genOptions={genOptions} />
+        <GeneratorContainer
+          pastNumbers={pastNumbers}
+          genOptions={genOptions}
+          positionCounters={analysis?.positionCounters}
+        />
         <GeneratorControls
           updateOptions={updateOptions}
           analysis={analysis}

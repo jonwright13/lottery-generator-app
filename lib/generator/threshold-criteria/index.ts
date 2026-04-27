@@ -178,7 +178,21 @@ export class ThresholdCriteria {
       topNumbers.push(mostCommonKey);
     }
 
-    return topNumbers as LotteryTuple;
+    if (topNumbers.length !== 7) {
+      throw new Error(
+        `Expected 7-position lottery tuple, got ${topNumbers.length}`,
+      );
+    }
+
+    return [
+      topNumbers[0],
+      topNumbers[1],
+      topNumbers[2],
+      topNumbers[3],
+      topNumbers[4],
+      topNumbers[5],
+      topNumbers[6],
+    ];
   }
 
   analyzeOddEvenDistribution(

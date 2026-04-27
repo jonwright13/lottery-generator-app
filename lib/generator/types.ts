@@ -58,5 +58,6 @@ export interface GenerateValidNumberSetOptions {
   oddRange: OddRange;
   maxMultiplesAllowed: Record<number, number>;
   clusterMax: number;
+  clusterGroupSize: number;
   debug: boolean;
 }

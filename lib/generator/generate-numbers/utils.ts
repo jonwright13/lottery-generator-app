@@ -51,14 +51,16 @@ export function generateUniqueNumbers(
 export function countMaxConsecutiveRun(numbers: number[]): number {
   if (!numbers.length) return 0;
 
+  const sorted = [...numbers].sort((a, b) => a - b);
+
   let maxRun = 1;
   let currentRun = 1;
 
-  for (let i = 1; i < numbers.length; i++) {
-    if (numbers[i] === numbers[i - 1] + 1) {
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] === sorted[i - 1] + 1) {
       currentRun += 1;
       if (currentRun > maxRun) maxRun = currentRun;
-    } else {
+    } else if (sorted[i] !== sorted[i - 1]) {
       currentRun = 1;
     }
   }

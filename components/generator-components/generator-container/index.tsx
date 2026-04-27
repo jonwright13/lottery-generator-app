@@ -16,9 +16,14 @@ import { GeneratorProps } from "../types";
 
 interface Props extends GeneratorProps {
   pastNumbers: LotteryTuple[] | null;
+  positionCounters?: Array<Record<string, number>>;
 }
 
-export const GeneratorContainer = ({ pastNumbers, genOptions }: Props) => {
+export const GeneratorContainer = ({
+  pastNumbers,
+  genOptions,
+  positionCounters,
+}: Props) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [results, setResults] = useState<GenerateValidNumberSetResult | null>(
     null,
@@ -74,7 +79,7 @@ export const GeneratorContainer = ({ pastNumbers, genOptions }: Props) => {
       });
     };
 
-    workerRef.current.postMessage({ pastNumbers, genOptions });
+    workerRef.current.postMessage({ pastNumbers, genOptions, positionCounters });
   };
 
   return (
