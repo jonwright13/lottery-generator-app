@@ -16,6 +16,7 @@ import { GeneratorProps } from "../types";
 import {
   ClusterMaxItem,
   GapDistributionItem,
+  LastDigitItem,
   MaxIterationsItem,
   MinMaxSumItem,
   OddEvenDistItem,
@@ -109,6 +110,20 @@ export const GeneratorControls = ({
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
             <ClusterMaxItem
+              genOptions={genOptions}
+              handleInputChange={handleInputChange}
+            />
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="last-digit">
+          <AccordionTrigger>
+            <TriggerRow
+              label="Max Same Last Digit"
+              value={String(genOptions.maxSameLastDigit)}
+            />
+          </AccordionTrigger>
+          <AccordionContent className="flex flex-col gap-y-2">
+            <LastDigitItem
               genOptions={genOptions}
               handleInputChange={handleInputChange}
             />
