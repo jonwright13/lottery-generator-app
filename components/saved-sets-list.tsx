@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSavedNumbers, type SavedSet } from "@/hooks/use-saved-numbers";
 import { useData } from "@/context/useDataProvider";
+import { type LotteryTuple } from "@/lib/generator";
 import { TrashIcon } from "lucide-react";
 import { useMemo } from "react";
 
@@ -11,40 +12,62 @@ interface RowProps {
   set: SavedSet;
   matched: boolean;
   onRemove: (id: string) => void;
+  onSelect?: (numbers: LotteryTuple) => void;
 }
 
-const Row = ({ set, matched, onRemove }: RowProps) => (
-  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b last:border-b-0 py-2">
+const Row = ({ set, matched, onRemove, onSelect }: RowProps) => {
+  const numbersList = (
     <ul className="flex gap-x-2 font-mono text-sm md:text-base">
       {set.numbers.map((n, i) => (
         <li key={i}>{n}</li>
       ))}
     </ul>
-    <span
-      className={
-        matched
-          ? "text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-          : "text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
-      }
-    >
-      {matched ? "Drawn before" : "Not drawn"}
-    </span>
-    <span className="text-xs text-muted-foreground ml-auto">
-      {new Date(set.savedAt).toLocaleString()}
-    </span>
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      onClick={() => onRemove(set.id)}
-      title="Remove"
-    >
-      <TrashIcon />
-    </Button>
-  </div>
-);
+  );
 
-export const SavedSetsList = () => {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b last:border-b-0 py-2">
+      {onSelect ? (
+        <button
+          type="button"
+          onClick={() => onSelect(set.numbers)}
+          className="cursor-pointer rounded-md px-2 py-1 -mx-2 hover:bg-accent hover:text-accent-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          title="Load into form"
+        >
+          {numbersList}
+        </button>
+      ) : (
+        numbersList
+      )}
+      <span
+        className={
+          matched
+            ? "text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+            : "text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
+        }
+      >
+        {matched ? "Drawn before" : "Not drawn"}
+      </span>
+      <span className="text-xs text-muted-foreground ml-auto">
+        {new Date(set.savedAt).toLocaleString()}
+      </span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={() => onRemove(set.id)}
+        title="Remove"
+      >
+        <TrashIcon />
+      </Button>
+    </div>
+  );
+};
+
+interface Props {
+  onSelect?: (numbers: LotteryTuple) => void;
+}
+
+export const SavedSetsList = ({ onSelect }: Props) => {
   const { pastNumbers } = useData();
   const { list, remove, hydrated } = useSavedNumbers();
 
@@ -72,6 +95,7 @@ export const SavedSetsList = () => {
           set={s}
           matched={pastSet.has(s.numbers.join(","))}
           onRemove={remove}
+          onSelect={onSelect}
         />
       ))}
     </Card>

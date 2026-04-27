@@ -6,24 +6,26 @@ import { SavedSetsList } from "@/components/saved-sets-list";
 import { FIELDS } from "@/constants";
 import { useData } from "@/context/useDataProvider";
 import { LotteryTuple } from "@/lib/generator";
+import { useState } from "react";
 import { toast } from "sonner";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
+type Values = Record<string, string>;
+
+const emptyValues = (): Values =>
+  Object.fromEntries(FIELDS.map(({ name }) => [name, ""]));
+
 const CheckNumbersPage = () => {
   const { pastNumbers } = useData();
+  const [values, setValues] = useState<Values>(emptyValues);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
-      const form = e.currentTarget;
-      const formData = new FormData(form);
-
-      // Parse, validate, and pad input
       const nums = FIELDS.map(({ name, max }) => {
-        const raw = formData.get(name);
-        const n = Number(raw);
+        const n = Number(values[name]);
 
         if (!Number.isInteger(n)) {
           throw new Error(`Invalid value for ${name}`);
@@ -36,7 +38,6 @@ const CheckNumbersPage = () => {
         return pad2(n);
       }) as LotteryTuple;
 
-      // Lookup
       const pastSet = new Set(pastNumbers.map((row) => row.join(",")));
       const match = pastSet.has(nums.join(","));
 
@@ -57,6 +58,14 @@ const CheckNumbersPage = () => {
     }
   };
 
+  const handleSelectSaved = (numbers: LotteryTuple) => {
+    setValues(
+      Object.fromEntries(
+        FIELDS.map(({ name }, i) => [name, String(Number(numbers[i]))]),
+      ),
+    );
+  };
+
   return (
     <>
       <h1 className="text-2xl font-bold mx-auto md:mx-0">Check Numbers</h1>
@@ -75,6 +84,10 @@ const CheckNumbersPage = () => {
                 min={1}
                 max={max}
                 required
+                value={values[name]}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, [name]: e.target.value }))
+                }
                 className="border rounded-sm px-2 py-1 w-8 md:w-12 text-center text-sm md:text-base"
                 onWheel={(e) => e.currentTarget.blur()}
               />
@@ -88,7 +101,8 @@ const CheckNumbersPage = () => {
               Check
             </Button>
             <Button
-              type="reset"
+              type="button"
+              onClick={() => setValues(emptyValues())}
               className="px-2 py-4 border rounded-md cursor-pointer"
             >
               Clear
@@ -98,7 +112,10 @@ const CheckNumbersPage = () => {
       </Card>
 
       <h2 className="text-lg font-medium mt-4">Saved sets</h2>
-      <SavedSetsList />
+      <p className="text-sm text-muted-foreground">
+        Click any set to load it into the form above.
+      </p>
+      <SavedSetsList onSelect={handleSelectSaved} />
     </>
   );
 };
