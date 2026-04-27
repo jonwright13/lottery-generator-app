@@ -76,28 +76,32 @@ export const SavedSetsList = ({ onSelect }: Props) => {
     [pastNumbers],
   );
 
-  if (!hydrated) return null;
-
-  if (list.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        No saved numbers yet. Generate some on the home page and tap the
-        bookmark to save them here.
-      </p>
-    );
-  }
-
   return (
-    <Card className="flex flex-col p-2 md:p-4 w-full">
-      {list.map((s) => (
-        <Row
-          key={s.id}
-          set={s}
-          matched={pastSet.has(s.numbers.join(","))}
-          onRemove={remove}
-          onSelect={onSelect}
-        />
-      ))}
+    <Card className="flex flex-col gap-y-2 p-4 w-full">
+      <h3 className="text-lg font-semibold">Saved sets</h3>
+      {onSelect && (
+        <p className="text-sm text-muted-foreground">
+          Click any set to load it into the form.
+        </p>
+      )}
+      {!hydrated ? null : list.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No saved numbers yet. Generate some on the home page and tap the
+          bookmark to save them here.
+        </p>
+      ) : (
+        <div className="flex flex-col">
+          {list.map((s) => (
+            <Row
+              key={s.id}
+              set={s}
+              matched={pastSet.has(s.numbers.join(","))}
+              onRemove={remove}
+              onSelect={onSelect}
+            />
+          ))}
+        </div>
+      )}
     </Card>
   );
 };
