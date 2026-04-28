@@ -27,26 +27,35 @@ const fetchHtml = async (url) => {
 
 const pad2 = (n) => n.toString().padStart(2, "0");
 
-/**
- * EuroMillions Lucky Stars went 1–11 → 1–12 on 2016-09-24. The runtime
- * GameConfig models the modern 1–12 shape, so older draws are dropped.
- */
-const LUCKY_STARS_12_CUTOFF = "2016-09-24";
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
- * Parse one lottery.co.uk EuroMillions archive page.
- * Each draw row starts with an anchor like
- *   <a href="/euromillions/results-31-12-2024" ...>
- * followed (in the same <tr>) by 5 main-ball divs and 2 lucky-star divs:
- *   <div class="result small euromillions-ball">19</div>
- *   <div class="result small euromillions-lucky-star">8</div>
- * We slice forward from each anchor to the next anchor and pull the divs
- * out of that chunk — robust to whitespace + minor HTML drift.
+ * Parse one lottery.co.uk archive page for any UK game.
+ *
+ * The pages all follow the same shape — each draw row is anchored by
+ *   <a href="/{slug}/results-DD-MM-YYYY" ...>
+ * and the row holds N main-ball divs followed by M bonus-ball divs:
+ *   <div class="result small {mainClass}">19</div>
+ *   <div class="result small {bonusClass}">8</div>
+ *
+ * `opts.mainCount` / `opts.bonusCount` are validated against each row so a
+ * mid-history format change (e.g. an extra ball) shows up as a discarded row
+ * rather than silent corruption.
  */
-const parseEuromillionsArchivePage = (html) => {
-  const anchorRe = /<a href="\/euromillions\/results-(\d{2})-(\d{2})-(\d{4})"/g;
+const parseLotteryCoUkPage = (html, opts) => {
+  const { slug, mainClass, bonusClass, mainCount, bonusCount } = opts;
+  const anchorRe = new RegExp(
+    `<a href="/${escapeRe(slug)}/results-(\\d{2})-(\\d{2})-(\\d{4})"`,
+    "g",
+  );
   const matches = [...html.matchAll(anchorRe)];
   const out = [];
+
+  const mainBallRe = new RegExp(`${escapeRe(mainClass)}">(\\d{1,2})</div>`, "g");
+  const bonusBallRe = new RegExp(
+    `${escapeRe(bonusClass)}">(\\d{1,2})</div>`,
+    "g",
+  );
 
   for (let i = 0; i < matches.length; i++) {
     const m = matches[i];
@@ -56,29 +65,24 @@ const parseEuromillionsArchivePage = (html) => {
     const end = i + 1 < matches.length ? matches[i + 1].index : html.length;
     const chunk = html.slice(start, end);
 
-    const balls = [...chunk.matchAll(/euromillions-ball">(\d{1,2})<\/div>/g)].map(
-      (x) => x[1],
-    );
-    const stars = [
-      ...chunk.matchAll(/euromillions-lucky-star">(\d{1,2})<\/div>/g),
-    ].map((x) => x[1]);
+    const mains = [...chunk.matchAll(mainBallRe)].map((x) => x[1]);
+    const bonuses = [...chunk.matchAll(bonusBallRe)].map((x) => x[1]);
 
-    if (balls.length !== 5 || stars.length !== 2) continue;
+    if (mains.length !== mainCount || bonuses.length !== bonusCount) continue;
 
-    const mains = balls
+    const sortedMains = mains
       .map(Number)
       .sort((a, b) => a - b)
       .map(pad2);
-    const luckies = stars
+    const sortedBonuses = bonuses
       .map(Number)
       .sort((a, b) => a - b)
       .map(pad2);
 
-    out.push({ date, row: [...mains, ...luckies] });
+    out.push({ date, row: [...sortedMains, ...sortedBonuses] });
   }
 
-  // De-duplicate by date — the page has the same anchor wrapping the row
-  // and individual cells in some layouts; first occurrence wins.
+  // De-duplicate by date — first occurrence wins.
   const seen = new Set();
   return out.filter((r) => {
     if (seen.has(r.date)) return false;
@@ -87,45 +91,114 @@ const parseEuromillionsArchivePage = (html) => {
   });
 };
 
-const fetchEuroMillions = async () => {
-  const startYear = 2016; // pre-cutoff years are filtered out anyway
-  const currentYear = new Date().getUTCFullYear();
-  const all = [];
+/**
+ * Build an async fetcher that pages through `lottery.co.uk`'s per-year
+ * archive for a given game and returns `{ dates, results }` newest-first,
+ * filtered to draws on or after `cutoff`.
+ *
+ *   opts.id          — debug/log label (e.g. "euromillions")
+ *   opts.slug        — URL slug ("euromillions", "lotto", ...)
+ *   opts.mainClass   — CSS class on the main-ball divs ("euromillions-ball")
+ *   opts.bonusClass  — CSS class on the bonus-ball divs ("lotto-bonus-ball")
+ *   opts.mainCount   — expected mains per draw
+ *   opts.bonusCount  — expected bonuses per draw
+ *   opts.startYear   — first year to fetch (anything older is filtered anyway)
+ *   opts.cutoff      — ISO date; draws strictly before it are dropped
+ *   opts.delayMs     — politeness delay between page requests (default 400)
+ */
+const makeLotteryCoUkFetcher = (opts) => {
+  const {
+    id,
+    slug,
+    mainClass,
+    bonusClass,
+    mainCount,
+    bonusCount,
+    startYear,
+    cutoff,
+    delayMs = 400,
+  } = opts;
 
-  for (let year = startYear; year <= currentYear; year++) {
-    const url = `https://www.lottery.co.uk/euromillions/results/archive-${year}`;
-    const html = await fetchHtml(url);
-    const rows = parseEuromillionsArchivePage(html);
-    if (rows.length === 0) {
-      // A young current year (e.g. fetched on Jan 2nd) might have very few
-      // rows but should never be totally empty for past years.
-      if (year < currentYear) {
-        throw new Error(
-          `[euromillions] Parsed 0 draws from ${url}. HTML structure may have changed.`,
-        );
+  return async () => {
+    const currentYear = new Date().getUTCFullYear();
+    const all = [];
+
+    for (let year = startYear; year <= currentYear; year++) {
+      const url = `https://www.lottery.co.uk/${slug}/results/archive-${year}`;
+      const html = await fetchHtml(url);
+      const rows = parseLotteryCoUkPage(html, {
+        slug,
+        mainClass,
+        bonusClass,
+        mainCount,
+        bonusCount,
+      });
+      if (rows.length === 0) {
+        if (year < currentYear) {
+          throw new Error(
+            `[${id}] Parsed 0 draws from ${url}. HTML structure may have changed.`,
+          );
+        }
+        console.warn(`[${id}] No rows yet on ${url}`);
+      } else {
+        console.log(`[${id}] ${year}: ${rows.length} draws`);
       }
-      console.warn(`[euromillions] No rows yet on ${url}`);
-    } else {
-      console.log(`[euromillions] ${year}: ${rows.length} draws`);
+      all.push(...rows);
+      if (year < currentYear) await delay(delayMs);
     }
-    all.push(...rows);
-    if (year < currentYear) await delay(400);
-  }
 
-  const filtered = all.filter((r) => r.date >= LUCKY_STARS_12_CUTOFF);
-  filtered.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+    const filtered = all.filter((r) => r.date >= cutoff);
+    filtered.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
-  return {
-    dates: filtered.map((r) => r.date),
-    results: filtered.map((r) => r.row),
+    return {
+      dates: filtered.map((r) => r.date),
+      results: filtered.map((r) => r.row),
+    };
   };
 };
 
+/**
+ * EuroMillions Lucky Stars went 1–11 → 1–12 on 2016-09-24. The runtime
+ * GameConfig models the modern 1–12 shape, so older draws are dropped.
+ */
+const LUCKY_STARS_12_CUTOFF = "2016-09-24";
+
+/**
+ * UK Lotto ball pool went 1–49 → 1–59 on 2015-10-10. The runtime GameConfig
+ * models the modern 1–59 shape, so older draws are dropped.
+ */
+const LOTTO_59_CUTOFF = "2015-10-10";
+
+const fetchEuroMillions = makeLotteryCoUkFetcher({
+  id: "euromillions",
+  slug: "euromillions",
+  mainClass: "euromillions-ball",
+  bonusClass: "euromillions-lucky-star",
+  mainCount: 5,
+  bonusCount: 2,
+  startYear: 2016,
+  cutoff: LUCKY_STARS_12_CUTOFF,
+});
+
+const fetchLotto = makeLotteryCoUkFetcher({
+  id: "lotto",
+  slug: "lotto",
+  mainClass: "lotto-ball",
+  bonusClass: "lotto-bonus-ball",
+  mainCount: 6,
+  bonusCount: 1,
+  startYear: 2015,
+  cutoff: LOTTO_59_CUTOFF,
+});
+
 export {
   fetchHtml,
-  parseEuromillionsArchivePage,
+  parseLotteryCoUkPage,
+  makeLotteryCoUkFetcher,
   fetchEuroMillions,
+  fetchLotto,
   LUCKY_STARS_12_CUTOFF,
+  LOTTO_59_CUTOFF,
 };
 
 /**
@@ -141,5 +214,11 @@ export const DATA_SOURCES = [
     outFile: "public/data/euromillions.json",
     source: "https://www.lottery.co.uk/euromillions/results/archive-{year}",
     fetch: fetchEuroMillions,
+  },
+  {
+    id: "lotto",
+    outFile: "public/data/lotto.json",
+    source: "https://www.lottery.co.uk/lotto/results/archive-{year}",
+    fetch: fetchLotto,
   },
 ];
