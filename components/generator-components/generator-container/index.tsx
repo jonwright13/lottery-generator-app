@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useData } from "@/context/useDataProvider";
+import { useGameAwareHref } from "@/hooks/use-game-aware-href";
 import { useSavedNumbers } from "@/hooks/use-saved-numbers";
 import {
   type GenerateValidNumberSetResult,
@@ -18,6 +19,7 @@ import {
 import { countMatchesByTier } from "@/lib/lottery-match";
 import { cn } from "@/lib/utils";
 import { BookmarkCheckIcon, BookmarkIcon } from "lucide-react";
+import Link from "next/link";
 import { Fragment, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -38,6 +40,7 @@ export const GeneratorContainer = ({
   const mainCount = game.main.count;
   const bonusLabel = game.bonus.label;
   const bonusLower = bonusLabel.toLowerCase();
+  const withGame = useGameAwareHref();
   const {
     list: savedList,
     add: saveNumbers,
@@ -128,10 +131,18 @@ export const GeneratorContainer = ({
       </div>
 
       {!combination && !isGenerating && (
-        <p className="text-sm text-muted-foreground text-center px-2">
-          Click <span className="font-medium">Generate numbers</span> to draw a
-          set tuned to historical patterns.
-        </p>
+        <div className="flex flex-col items-center gap-y-1.5 text-center px-2">
+          <p className="text-sm text-muted-foreground">
+            Click <span className="font-medium">Generate numbers</span> to draw
+            a set tuned to {game.name}&apos;s historical draws.
+          </p>
+          <Link
+            href={withGame("/about")}
+            className="text-xs text-muted-foreground/80 hover:text-foreground hover:underline underline-offset-4"
+          >
+            What is this?
+          </Link>
+        </div>
       )}
 
       {combination && (
