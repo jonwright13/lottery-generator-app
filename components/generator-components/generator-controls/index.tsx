@@ -9,6 +9,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -21,8 +28,9 @@ import {
   type UpdateOptions,
 } from "@/lib/generator";
 import { cn } from "@/lib/utils";
-import { RotateCcwIcon } from "lucide-react";
+import { CheckIcon, RotateCcwIcon, SaveIcon } from "lucide-react";
 import { useMemo } from "react";
+import { toast } from "sonner";
 import { GeneratorProps } from "../types";
 import {
   ClusterMaxItem,
@@ -89,10 +97,35 @@ export const GeneratorControls = ({
   genOptions,
   updateOptions,
 }: Props) => {
-  const { game, pastNumbers, seededOptions, resetOptions, isAtDefaults } =
-    useData();
+  const {
+    game,
+    pastNumbers,
+    seededOptions,
+    resetOptions,
+    isAtDefaults,
+    saveOptions,
+    restoreSavedOptions,
+    clearSavedOptions,
+    isAtSaved,
+    hasSavedOptions,
+  } = useData();
   const bonusLabel = game.bonus.label.toLowerCase();
   const showBonusGap = game.bonus.count > 1;
+  const canSave = !isAtSaved;
+  const handleSave = () => {
+    saveOptions();
+    toast.success(`${game.name} preset saved`, {
+      description: "Will load automatically next time.",
+    });
+  };
+  const handleRestoreSaved = () => {
+    restoreSavedOptions();
+    toast(`${game.name} preset restored`);
+  };
+  const handleClearSaved = () => {
+    clearSavedOptions();
+    toast(`${game.name} preset cleared`);
+  };
 
   // Live "of N historical draws, how many would pass the current constraint
   // set" — recomputes whenever any threshold changes. ~3-5 ms across all four
@@ -153,23 +186,92 @@ export const GeneratorControls = ({
             <TooltipTrigger asChild>
               <Button
                 type="button"
-                variant="ghost"
+                variant={canSave ? "default" : "ghost"}
                 size="sm"
-                onClick={resetOptions}
-                disabled={isAtDefaults}
-                aria-label="Reset controls to data-derived defaults"
-                className="gap-1.5 text-muted-foreground"
+                onClick={handleSave}
+                disabled={!canSave}
+                aria-label={
+                  hasSavedOptions
+                    ? "Update saved preset for this game"
+                    : "Save current controls as a preset"
+                }
+                className="gap-1.5"
               >
-                <RotateCcwIcon className="size-3.5" aria-hidden />
-                Reset
+                {isAtSaved && hasSavedOptions ? (
+                  <CheckIcon className="size-3.5" aria-hidden />
+                ) : (
+                  <SaveIcon className="size-3.5" aria-hidden />
+                )}
+                {hasSavedOptions ? "Update" : "Save"}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              {isAtDefaults
-                ? "Already at data-derived defaults"
-                : "Reset to data-derived defaults"}
+            <TooltipContent className="max-w-xs">
+              {!hasSavedOptions
+                ? "Save current Controls as a preset for this game. The preset auto-loads on return visits."
+                : isAtSaved
+                  ? "Already matches the saved preset"
+                  : "Update the saved preset for this game"}
             </TooltipContent>
           </Tooltip>
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Reset controls"
+                    disabled={
+                      isAtDefaults && (!hasSavedOptions || isAtSaved)
+                    }
+                    className="gap-1.5 text-muted-foreground"
+                  >
+                    <RotateCcwIcon className="size-3.5" aria-hidden />
+                    Reset
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Reset Controls</TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuItem
+                onClick={resetOptions}
+                disabled={isAtDefaults}
+                className="cursor-pointer"
+              >
+                <span className="flex flex-col">
+                  <span>Reset to defaults</span>
+                  <span className="text-xs text-muted-foreground">
+                    Data-derived from {game.name} history
+                  </span>
+                </span>
+              </DropdownMenuItem>
+              {hasSavedOptions && (
+                <>
+                  <DropdownMenuItem
+                    onClick={handleRestoreSaved}
+                    disabled={isAtSaved}
+                    className="cursor-pointer"
+                  >
+                    <span className="flex flex-col">
+                      <span>Reset to saved preset</span>
+                      <span className="text-xs text-muted-foreground">
+                        Your last-saved Controls for {game.name}
+                      </span>
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleClearSaved}
+                    className="cursor-pointer text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+                  >
+                    Clear saved preset
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       <Accordion type="single" collapsible>
