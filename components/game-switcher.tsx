@@ -36,17 +36,21 @@ export const GameSwitcher = () => {
         <Button
           variant="outline"
           size="sm"
-          className="gap-2"
+          className="gap-2 w-40 justify-between cursor-pointer"
           aria-label={`Active game: ${active.name}. Click to switch.`}
         >
-          <span className="font-medium">{active.name}</span>
-          <ChevronDownIcon className="size-4" aria-hidden />
+          <span className="font-medium truncate">{active.name}</span>
+          <ChevronDownIcon className="size-4 shrink-0" aria-hidden />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-44">
         <DropdownMenuRadioGroup value={active.id} onValueChange={handleSelect}>
           {GAMES.map((g) => (
-            <DropdownMenuRadioItem key={g.id} value={g.id}>
+            <DropdownMenuRadioItem
+              key={g.id}
+              value={g.id}
+              className="cursor-pointer"
+            >
               <div className="flex flex-col leading-tight">
                 <span>{g.name}</span>
                 {g.drawDays && (
