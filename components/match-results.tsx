@@ -2,6 +2,7 @@
 
 import {
   WINDOW_OPTIONS,
+  resolveWindowBounds,
   type WindowKey,
 } from "@/components/analysis-components/window-filter";
 import { Button } from "@/components/ui/button";
@@ -21,11 +22,8 @@ interface Props {
   userLucky: string[] | null;
 }
 
-const computeCutoff = (years: number): string => {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() - years);
-  return d.toISOString().slice(0, 10);
-};
+// Custom date-range is only supported on /analysis; this card sticks to the presets.
+const PRESET_OPTIONS = WINDOW_OPTIONS.filter((o) => o.key !== "custom");
 
 export const MatchResults = ({ userMain, userLucky }: Props) => {
   const { game, pastNumbers, dates } = useData();
@@ -34,14 +32,16 @@ export const MatchResults = ({ userMain, userLucky }: Props) => {
   const [windowKey, setWindowKey] = useState<WindowKey>("all");
 
   const { windowedPast, windowedDates } = useMemo(() => {
-    const opt = WINDOW_OPTIONS.find((o) => o.key === windowKey);
-    if (!opt || opt.years == null) {
+    const { from, to } = resolveWindowBounds(windowKey, null, null);
+    if (!from && !to) {
       return { windowedPast: pastNumbers, windowedDates: dates };
     }
-    const cutoff = computeCutoff(opt.years);
     const idx: number[] = [];
     for (let i = 0; i < dates.length; i++) {
-      if (dates[i] >= cutoff) idx.push(i);
+      const d = dates[i];
+      if (from && d < from) continue;
+      if (to && d > to) continue;
+      idx.push(i);
     }
     return {
       windowedPast: idx.map((i) => pastNumbers[i]),
@@ -69,7 +69,7 @@ export const MatchResults = ({ userMain, userLucky }: Props) => {
           aria-label="Historical window"
           className="inline-flex rounded-md border p-0.5"
         >
-          {WINDOW_OPTIONS.map((opt) => {
+          {PRESET_OPTIONS.map((opt) => {
             const active = opt.key === windowKey;
             return (
               <Button

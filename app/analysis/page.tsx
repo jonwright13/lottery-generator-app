@@ -6,6 +6,8 @@ import { ConsecutiveRunDistribution } from "@/components/analysis-components/con
 import { GapDistribution } from "@/components/analysis-components/gap-distribution";
 import { HotColdNumbers } from "@/components/analysis-components/hot-cold-numbers";
 import { LastDigitDistribution } from "@/components/analysis-components/last-digit-distribution";
+import { MaxPatternProbabilities } from "@/components/analysis-components/max-pattern-probabilities";
+import { MultiplesDistribution } from "@/components/analysis-components/multiples-distribution";
 import { NumberFrequency } from "@/components/analysis-components/number-frequency";
 import { OddEvenDistribution } from "@/components/analysis-components/odd-even-distribution";
 import { PairCoOccurrence } from "@/components/analysis-components/pair-cooccurrence";
@@ -14,9 +16,10 @@ import { SumDistribution } from "@/components/analysis-components/sum-distributi
 import { TopNumbersPerPosition } from "@/components/analysis-components/top-numbers-per-position";
 import { TripletCoOccurrence } from "@/components/analysis-components/triplet-cooccurrence";
 import {
-  WINDOW_OPTIONS,
   WindowFilter,
   isWindowKey,
+  resolveWindowBounds,
+  seedCustomRange,
   type WindowKey,
 } from "@/components/analysis-components/window-filter";
 import { Heatmap } from "@/components/position-heat-map";
@@ -29,11 +32,9 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",
 });
 
-const computeCutoff = (years: number): string => {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() - years);
-  return d.toISOString().slice(0, 10);
-};
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const isISODate = (v: string | null): v is string =>
+  v !== null && ISO_DATE_RE.test(v);
 
 export default function AnalysisPage() {
   return (
@@ -58,40 +59,93 @@ const AnalysisContent = () => {
   const rawWindow = searchParams.get("window");
   const windowKey: WindowKey = isWindowKey(rawWindow) ? rawWindow : "all";
 
-  const setWindow = useCallback(
-    (key: WindowKey) => {
+  const rawFrom = searchParams.get("from");
+  const rawTo = searchParams.get("to");
+  const customFrom = isISODate(rawFrom) ? rawFrom : null;
+  const customTo = isISODate(rawTo) ? rawTo : null;
+
+  const updateParams = useCallback(
+    (mutate: (params: URLSearchParams) => void) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (key === "all") params.delete("window");
-      else params.set("window", key);
+      mutate(params);
       const qs = params.toString();
       router.replace(qs ? `/analysis?${qs}` : "/analysis", { scroll: false });
     },
     [router, searchParams],
   );
 
+  const setWindow = useCallback(
+    (key: WindowKey) => {
+      updateParams((params) => {
+        if (key === "all") params.delete("window");
+        else params.set("window", key);
+        if (key !== "custom") {
+          params.delete("from");
+          params.delete("to");
+        } else if (!isISODate(params.get("from")) || !isISODate(params.get("to"))) {
+          const seed = seedCustomRange();
+          if (!isISODate(params.get("from"))) params.set("from", seed.from);
+          if (!isISODate(params.get("to"))) params.set("to", seed.to);
+        }
+      });
+    },
+    [updateParams],
+  );
+
+  const setCustomFrom = useCallback(
+    (value: string) => {
+      updateParams((params) => {
+        if (isISODate(value)) params.set("from", value);
+        else params.delete("from");
+      });
+    },
+    [updateParams],
+  );
+
+  const setCustomTo = useCallback(
+    (value: string) => {
+      updateParams((params) => {
+        if (isISODate(value)) params.set("to", value);
+        else params.delete("to");
+      });
+    },
+    [updateParams],
+  );
+
   const { windowedPast, windowedDates, windowedAnalysis } = useMemo(() => {
-    const opt = WINDOW_OPTIONS.find((o) => o.key === windowKey);
-    if (!opt || opt.years == null) {
+    const { from, to } = resolveWindowBounds(windowKey, customFrom, customTo);
+    if (!from && !to) {
       return {
         windowedPast: pastNumbers,
         windowedDates: dates,
         windowedAnalysis: fullAnalysis,
       };
     }
-    const cutoff = computeCutoff(opt.years);
     const idx: number[] = [];
     for (let i = 0; i < dates.length; i++) {
-      if (dates[i] >= cutoff) idx.push(i);
+      const d = dates[i];
+      if (from && d < from) continue;
+      if (to && d > to) continue;
+      idx.push(i);
     }
     const wp = idx.map((i) => pastNumbers[i]);
     const wd = idx.map((i) => dates[i]);
-    const wa = wp.length > 0 ? new ThresholdCriteria(wp, game, false) : fullAnalysis;
+    const wa =
+      wp.length > 0 ? new ThresholdCriteria(wp, game, false) : fullAnalysis;
     return {
       windowedPast: wp,
       windowedDates: wd,
       windowedAnalysis: wa,
     };
-  }, [pastNumbers, dates, fullAnalysis, windowKey, game]);
+  }, [
+    pastNumbers,
+    dates,
+    fullAnalysis,
+    windowKey,
+    customFrom,
+    customTo,
+    game,
+  ]);
 
   const updatedLabel = (() => {
     const d = new Date(updatedAt);
@@ -125,6 +179,10 @@ const AnalysisContent = () => {
         windowedDraws={windowedPast.length}
         windowStart={windowedDates[windowedDates.length - 1] ?? null}
         windowEnd={windowedDates[0] ?? null}
+        customFrom={customFrom}
+        customTo={customTo}
+        onCustomFromChange={setCustomFrom}
+        onCustomToChange={setCustomTo}
       />
 
       {!hasData ? (
@@ -143,6 +201,8 @@ const AnalysisContent = () => {
 
           <TopNumbersPerPosition analysis={windowedAnalysis} />
 
+          <MaxPatternProbabilities analysis={windowedAnalysis} />
+
           <SumDistribution
             pastNumbers={windowedPast}
             analysis={windowedAnalysis}
@@ -155,6 +215,8 @@ const AnalysisContent = () => {
           <ClusterDistribution pastNumbers={windowedPast} />
 
           <LastDigitDistribution analysis={windowedAnalysis} />
+
+          <MultiplesDistribution analysis={windowedAnalysis} />
 
           <PreviousDrawOverlap analysis={windowedAnalysis} />
 
