@@ -7,9 +7,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { GameSwitcher } from "@/components/game-switcher";
+import { cn } from "@/lib/utils";
 import { MenuIcon } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ThemeToggle } from "./theme-toggle";
 
 // Preserve `?game=` across in-app navigation so switching pages doesn't
@@ -19,6 +20,31 @@ const useGameAwareHref = () => {
   const sp = useSearchParams();
   const game = sp.get("game");
   return (path: string) => (game ? `${path}?game=${game}` : path);
+};
+
+interface NavLinkProps {
+  href: string;
+  path: string;
+  label: string;
+}
+
+const NavLink = ({ href, path, label }: NavLinkProps) => {
+  const pathname = usePathname();
+  const isActive = pathname === path;
+  return (
+    <Link
+      href={href}
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        "transition-colors hover:underline underline-offset-4",
+        isActive
+          ? "font-semibold underline decoration-2"
+          : "text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {label}
+    </Link>
+  );
 };
 
 export const Navbar = () => {
@@ -67,29 +93,31 @@ const NavItems = () => {
     <nav>
       <ul className="flex flex-col lg:flex-row gap-2 lg:gap-8 items-start lg:items-center">
         <li>
-          <Link href={withGame("/")} className="hover:underline">
-            Generate
-          </Link>
+          <NavLink href={withGame("/")} path="/" label="Generate" />
         </li>
         <li>
-          <Link href={withGame("/check-numbers")} className="hover:underline">
-            Check Numbers
-          </Link>
+          <NavLink
+            href={withGame("/check-numbers")}
+            path="/check-numbers"
+            label="Check Numbers"
+          />
         </li>
         <li>
-          <Link href={withGame("/analysis")} className="hover:underline">
-            Analysis
-          </Link>
+          <NavLink
+            href={withGame("/analysis")}
+            path="/analysis"
+            label="Analysis"
+          />
         </li>
         <li>
-          <Link href={withGame("/historical")} className="hover:underline">
-            Historical
-          </Link>
+          <NavLink
+            href={withGame("/historical")}
+            path="/historical"
+            label="Historical"
+          />
         </li>
         <li>
-          <Link href={withGame("/about")} className="hover:underline">
-            About
-          </Link>
+          <NavLink href={withGame("/about")} path="/about" label="About" />
         </li>
       </ul>
     </nav>
