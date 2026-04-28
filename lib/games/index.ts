@@ -1,6 +1,7 @@
 import type { GameConfig } from "./types";
 import { EUROMILLIONS } from "./euromillions";
 import { LOTTO } from "./lotto";
+import { SET_FOR_LIFE } from "./set-for-life";
 
 export type { GameConfig, BallSet } from "./types";
 
@@ -9,7 +10,11 @@ export type { GameConfig, BallSet } from "./types";
  * switcher renders in. The first entry is the default game until
  * DEFAULT_GAME_ID below is changed.
  */
-export const GAMES: readonly GameConfig[] = [EUROMILLIONS, LOTTO] as const;
+export const GAMES: readonly GameConfig[] = [
+  EUROMILLIONS,
+  LOTTO,
+  SET_FOR_LIFE,
+] as const;
 
 export const DEFAULT_GAME_ID: string = EUROMILLIONS.id;
 

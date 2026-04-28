@@ -169,6 +169,11 @@ const LUCKY_STARS_12_CUTOFF = "2016-09-24";
  */
 const LOTTO_59_CUTOFF = "2015-10-10";
 
+/**
+ * Set For Life launched 18 March 2019; no format changes since.
+ */
+const SET_FOR_LIFE_LAUNCH = "2019-03-18";
+
 const fetchEuroMillions = makeLotteryCoUkFetcher({
   id: "euromillions",
   slug: "euromillions",
@@ -191,14 +196,27 @@ const fetchLotto = makeLotteryCoUkFetcher({
   cutoff: LOTTO_59_CUTOFF,
 });
 
+const fetchSetForLife = makeLotteryCoUkFetcher({
+  id: "set-for-life",
+  slug: "set-for-life",
+  mainClass: "setForLife-ball",
+  bonusClass: "setForLife-life-ball",
+  mainCount: 5,
+  bonusCount: 1,
+  startYear: 2019,
+  cutoff: SET_FOR_LIFE_LAUNCH,
+});
+
 export {
   fetchHtml,
   parseLotteryCoUkPage,
   makeLotteryCoUkFetcher,
   fetchEuroMillions,
   fetchLotto,
+  fetchSetForLife,
   LUCKY_STARS_12_CUTOFF,
   LOTTO_59_CUTOFF,
+  SET_FOR_LIFE_LAUNCH,
 };
 
 /**
@@ -220,5 +238,11 @@ export const DATA_SOURCES = [
     outFile: "public/data/lotto.json",
     source: "https://www.lottery.co.uk/lotto/results/archive-{year}",
     fetch: fetchLotto,
+  },
+  {
+    id: "set-for-life",
+    outFile: "public/data/set-for-life.json",
+    source: "https://www.lottery.co.uk/set-for-life/results/archive-{year}",
+    fetch: fetchSetForLife,
   },
 ];
