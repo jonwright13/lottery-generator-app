@@ -1,156 +1,145 @@
 /**
- * Per-game CSV fetch URLs + parsers.
+ * Per-game data sources.
  *
- * Build-time only. Mirrors the runtime `lib/games/<id>.ts` GameConfig by id;
- * the duplication is intentional so the fetch script can stay plain ESM JS
- * (no tsx / ts-node) while the runtime side stays in TS.
- *
- * Each parser receives the raw CSV text and returns:
+ * Build-time only. Each entry exposes an async `fetch()` that returns:
  *   { dates: string[], results: string[][] }
- * where dates are ISO YYYY-MM-DD and each results entry is a flat array of
- * `mainCount + bonusCount` zero-padded 2-digit strings ([m1..mN, b1..bM]).
+ * where dates are ISO YYYY-MM-DD newest-first and each results entry is a
+ * flat array of `mainCount + bonusCount` zero-padded 2-digit strings.
+ *
+ * Letting each source own its fetch lets games that need multi-page scraping
+ * (e.g. lottery.co.uk's per-year archive pages) live alongside ones that
+ * could read a single CSV later, without forking the runner.
  */
 
-const padNum = (raw) => {
-  const n = parseInt(raw, 10);
-  if (Number.isNaN(n)) throw new Error(`Not a number: ${raw}`);
-  return n.toString().padStart(2, "0");
-};
+import { setTimeout as delay } from "node:timers/promises";
 
-const MONTH_MAP = {
-  Jan: "01",
-  Feb: "02",
-  Mar: "03",
-  Apr: "04",
-  May: "05",
-  Jun: "06",
-  Jul: "07",
-  Aug: "08",
-  Sep: "09",
-  Oct: "10",
-  Nov: "11",
-  Dec: "12",
-};
+const UA = "Mozilla/5.0 (compatible; lottery-generator-fetcher/1.0)";
 
-const parseDdMmmYyyy = (raw) => {
-  // national-lottery.co.uk dates: "24-Apr-2026" or "07-Jan-2020"
-  const [ddRaw, mmm, yyyyRaw] = raw.split("-");
-  const dd = String(parseInt(ddRaw, 10)).padStart(2, "0");
-  const mm = MONTH_MAP[mmm];
-  const yyyy = String(parseInt(yyyyRaw, 10));
-  if (!mm || !yyyy || Number.isNaN(Number(dd))) {
-    throw new Error(`Unparseable date: ${raw}`);
+const fetchHtml = async (url) => {
+  const res = await fetch(url, {
+    headers: { "User-Agent": UA, Accept: "text/html,application/xhtml+xml" },
+  });
+  if (!res.ok) {
+    throw new Error(`Fetch ${url} failed ${res.status} ${res.statusText}`);
   }
-  return `${yyyy}-${mm}-${dd}`;
+  return res.text();
 };
 
-const splitCsvLines = (text) =>
-  text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
+const pad2 = (n) => n.toString().padStart(2, "0");
 
 /**
- * EuroMillions CSV from national-lottery.co.uk
- *   header: DrawDate,Ball 1,Ball 2,Ball 3,Ball 4,Ball 5,Lucky Star 1,Lucky Star 2,UK Millionaire Maker,DrawNumber
- *   row:    24-Apr-2026,25,26,30,40,45,1,5,XXXX0001234,1234
- *
- * Pre-2016-09-24 draws used Lucky Stars 1–11; we drop those so the
- * runtime can assume the modern 1–12 shape (matches GameConfig).
- *
- * Mains and stars are sorted ascending so analysis-side per-position
- * stats are stable regardless of draw-order quirks in the source CSV.
+ * EuroMillions Lucky Stars went 1–11 → 1–12 on 2016-09-24. The runtime
+ * GameConfig models the modern 1–12 shape, so older draws are dropped.
  */
 const LUCKY_STARS_12_CUTOFF = "2016-09-24";
 
-const parseEuroMillions = (csvText) => {
-  const lines = splitCsvLines(csvText);
-  const headerIdx = lines.findIndex(
-    (l) =>
-      l.includes("DrawDate") &&
-      l.includes("Ball 1") &&
-      l.includes("Lucky Star 1"),
-  );
-  if (headerIdx === -1) {
-    throw new Error(
-      `EuroMillions CSV header not found. First lines: ${lines
-        .slice(0, 5)
-        .join(" | ")}`,
+/**
+ * Parse one lottery.co.uk EuroMillions archive page.
+ * Each draw row starts with an anchor like
+ *   <a href="/euromillions/results-31-12-2024" ...>
+ * followed (in the same <tr>) by 5 main-ball divs and 2 lucky-star divs:
+ *   <div class="result small euromillions-ball">19</div>
+ *   <div class="result small euromillions-lucky-star">8</div>
+ * We slice forward from each anchor to the next anchor and pull the divs
+ * out of that chunk — robust to whitespace + minor HTML drift.
+ */
+const parseEuromillionsArchivePage = (html) => {
+  const anchorRe = /<a href="\/euromillions\/results-(\d{2})-(\d{2})-(\d{4})"/g;
+  const matches = [...html.matchAll(anchorRe)];
+  const out = [];
+
+  for (let i = 0; i < matches.length; i++) {
+    const m = matches[i];
+    const [, dd, mm, yyyy] = m;
+    const date = `${yyyy}-${mm}-${dd}`;
+    const start = m.index;
+    const end = i + 1 < matches.length ? matches[i + 1].index : html.length;
+    const chunk = html.slice(start, end);
+
+    const balls = [...chunk.matchAll(/euromillions-ball">(\d{1,2})<\/div>/g)].map(
+      (x) => x[1],
     );
+    const stars = [
+      ...chunk.matchAll(/euromillions-lucky-star">(\d{1,2})<\/div>/g),
+    ].map((x) => x[1]);
+
+    if (balls.length !== 5 || stars.length !== 2) continue;
+
+    const mains = balls
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map(pad2);
+    const luckies = stars
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map(pad2);
+
+    out.push({ date, row: [...mains, ...luckies] });
   }
 
-  const headers = lines[headerIdx].split(",").map((h) => h.trim());
-  const cols = [
-    "DrawDate",
-    "Ball 1",
-    "Ball 2",
-    "Ball 3",
-    "Ball 4",
-    "Ball 5",
-    "Lucky Star 1",
-    "Lucky Star 2",
-  ];
-  const idx = cols.map((c) => headers.indexOf(c));
-  if (idx.some((i) => i === -1)) {
-    throw new Error(
-      `Missing expected EuroMillions columns. Headers: ${headers.join(", ")}`,
-    );
-  }
-
-  const dates = [];
-  const results = [];
-  for (let i = headerIdx + 1; i < lines.length; i++) {
-    const parts = lines[i].split(",").map((p) => p.trim());
-    if (parts.length < headers.length) continue;
-    let date;
-    try {
-      date = parseDdMmmYyyy(parts[idx[0]]);
-    } catch {
-      continue;
-    }
-    if (date < LUCKY_STARS_12_CUTOFF) continue;
-
-    let mains, stars;
-    try {
-      mains = idx
-        .slice(1, 6)
-        .map((c) => parseInt(parts[c], 10))
-        .sort((a, b) => a - b)
-        .map((n) => n.toString().padStart(2, "0"));
-      stars = idx
-        .slice(6, 8)
-        .map((c) => parseInt(parts[c], 10))
-        .sort((a, b) => a - b)
-        .map((n) => n.toString().padStart(2, "0"));
-    } catch {
-      continue;
-    }
-    if (mains.length !== 5 || stars.length !== 2) continue;
-    if (mains.some((m) => m === "NaN") || stars.some((s) => s === "NaN")) continue;
-
-    dates.push(date);
-    results.push([...mains, ...stars]);
-  }
-
-  // The CSV is newest-first; the rest of the app already assumes
-  // pastNumbers[0] is the most recent draw, so leave order as-is.
-  return { dates, results };
+  // De-duplicate by date — the page has the same anchor wrapping the row
+  // and individual cells in some layouts; first occurrence wins.
+  const seen = new Set();
+  return out.filter((r) => {
+    if (seen.has(r.date)) return false;
+    seen.add(r.date);
+    return true;
+  });
 };
 
-export { padNum, parseDdMmmYyyy, splitCsvLines, parseEuroMillions };
+const fetchEuroMillions = async () => {
+  const startYear = 2016; // pre-cutoff years are filtered out anyway
+  const currentYear = new Date().getUTCFullYear();
+  const all = [];
+
+  for (let year = startYear; year <= currentYear; year++) {
+    const url = `https://www.lottery.co.uk/euromillions/results/archive-${year}`;
+    const html = await fetchHtml(url);
+    const rows = parseEuromillionsArchivePage(html);
+    if (rows.length === 0) {
+      // A young current year (e.g. fetched on Jan 2nd) might have very few
+      // rows but should never be totally empty for past years.
+      if (year < currentYear) {
+        throw new Error(
+          `[euromillions] Parsed 0 draws from ${url}. HTML structure may have changed.`,
+        );
+      }
+      console.warn(`[euromillions] No rows yet on ${url}`);
+    } else {
+      console.log(`[euromillions] ${year}: ${rows.length} draws`);
+    }
+    all.push(...rows);
+    if (year < currentYear) await delay(400);
+  }
+
+  const filtered = all.filter((r) => r.date >= LUCKY_STARS_12_CUTOFF);
+  filtered.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+
+  return {
+    dates: filtered.map((r) => r.date),
+    results: filtered.map((r) => r.row),
+  };
+};
+
+export {
+  fetchHtml,
+  parseEuromillionsArchivePage,
+  fetchEuroMillions,
+  LUCKY_STARS_12_CUTOFF,
+};
 
 /**
  * Per-game fetch sources. Each entry is consumed by `scripts/fetch-data.mjs`
- * which fetches the URL, runs the parser, and writes the resulting JSON to
- * `outFile`. To add a new game: push a new entry here and ship a matching
- * GameConfig under `lib/games/<id>.ts` with `dataPath` pointing at the
- * same file (relative to `public/`).
+ * which calls `fetch()` and writes the resulting JSON to `outFile`. To add a
+ * new game: push a new entry here and ship a matching GameConfig under
+ * `lib/games/<id>.ts` with `dataPath` pointing at the same file (relative to
+ * `public/`).
  */
 export const DATA_SOURCES = [
   {
     id: "euromillions",
-    url: "https://www.national-lottery.co.uk/results/euromillions/draw-history/csv",
     outFile: "public/data/euromillions.json",
-    parser: parseEuroMillions,
+    source: "https://www.lottery.co.uk/euromillions/results/archive-{year}",
+    fetch: fetchEuroMillions,
   },
 ];

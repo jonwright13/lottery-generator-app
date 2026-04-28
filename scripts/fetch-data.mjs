@@ -3,32 +3,22 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { DATA_SOURCES } from "./data-sources.mjs";
 
-const fetchOne = async ({ id, url, outFile, parser }) => {
-  const res = await fetch(url, {
-    method: "GET",
-    headers: {
-      "User-Agent": "github-actions-fetch/1.0",
-      Accept: "text/csv, text/plain, */*",
-    },
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(
-      `[${id}] Fetch failed ${res.status} ${res.statusText}\n${text.slice(0, 500)}`,
-    );
-  }
-
-  const csv = await res.text();
-  const { dates, results } = parser(csv);
+const fetchOne = async ({ id, outFile, source, fetch: fetchFn }) => {
+  const { dates, results } = await fetchFn();
 
   if (results.length === 0) {
-    throw new Error(`[${id}] Parser returned 0 rows`);
+    throw new Error(`[${id}] Source returned 0 rows`);
+  }
+
+  if (dates.length !== results.length) {
+    throw new Error(
+      `[${id}] dates/results length mismatch (${dates.length} vs ${results.length})`,
+    );
   }
 
   const payload = {
     fetchedAt: new Date().toISOString(),
-    source: url,
+    source,
     dates,
     results,
   };
@@ -42,9 +32,9 @@ const fetchOne = async ({ id, url, outFile, parser }) => {
     oldText = await fs.readFile(outFile, "utf8");
   } catch {}
 
-  // Compare hash on the data fields only (ignoring fetchedAt) so
-  // re-running on a quiet day doesn't churn the file. JSON.stringify is
-  // stable for the simple shape we have.
+  // Compare hash on the data fields only (ignoring fetchedAt) so re-running
+  // on a quiet day doesn't churn the file. JSON.stringify is stable for the
+  // simple shape we have.
   const hashable = (text) => {
     if (!text) return "";
     try {
@@ -92,9 +82,9 @@ const main = async () => {
   }
 
   let failures = 0;
-  for (const source of sources) {
+  for (const src of sources) {
     try {
-      await fetchOne(source);
+      await fetchOne(src);
     } catch (err) {
       failures += 1;
       console.error(err);
