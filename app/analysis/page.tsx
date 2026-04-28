@@ -2,6 +2,7 @@
 
 import { ArithmeticProgressionDistribution } from "@/components/analysis-components/arithmetic-progression-distribution";
 import { ClusterDistribution } from "@/components/analysis-components/cluster-distribution";
+import { ConsecutiveRunDistribution } from "@/components/analysis-components/consecutive-run-distribution";
 import { GapDistribution } from "@/components/analysis-components/gap-distribution";
 import { HotColdNumbers } from "@/components/analysis-components/hot-cold-numbers";
 import { LastDigitDistribution } from "@/components/analysis-components/last-digit-distribution";
@@ -11,6 +12,7 @@ import { PairCoOccurrence } from "@/components/analysis-components/pair-cooccurr
 import { PreviousDrawOverlap } from "@/components/analysis-components/previous-draw-overlap";
 import { SumDistribution } from "@/components/analysis-components/sum-distribution";
 import { TopNumbersPerPosition } from "@/components/analysis-components/top-numbers-per-position";
+import { TripletCoOccurrence } from "@/components/analysis-components/triplet-cooccurrence";
 import {
   WINDOW_OPTIONS,
   WindowFilter,
@@ -158,7 +160,11 @@ const AnalysisContent = () => {
 
           <ArithmeticProgressionDistribution analysis={windowedAnalysis} />
 
+          <ConsecutiveRunDistribution analysis={windowedAnalysis} />
+
           <PairCoOccurrence analysis={windowedAnalysis} />
+
+          <TripletCoOccurrence analysis={windowedAnalysis} />
 
           <HotColdNumbers pastNumbers={windowedPast} />
         </>
