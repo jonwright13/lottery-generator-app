@@ -174,6 +174,12 @@ const LOTTO_59_CUTOFF = "2015-10-10";
  */
 const SET_FOR_LIFE_LAUNCH = "2019-03-18";
 
+/**
+ * Thunderball matrix moved from 5/34 to 5/39 on 10 May 2010. The runtime
+ * GameConfig models the modern 1–39 main shape, so older draws are dropped.
+ */
+const THUNDERBALL_39_CUTOFF = "2010-05-10";
+
 const fetchEuroMillions = makeLotteryCoUkFetcher({
   id: "euromillions",
   slug: "euromillions",
@@ -207,6 +213,17 @@ const fetchSetForLife = makeLotteryCoUkFetcher({
   cutoff: SET_FOR_LIFE_LAUNCH,
 });
 
+const fetchThunderball = makeLotteryCoUkFetcher({
+  id: "thunderball",
+  slug: "thunderball",
+  mainClass: "thunderball-ball",
+  bonusClass: "thunderball-thunderball",
+  mainCount: 5,
+  bonusCount: 1,
+  startYear: 2010,
+  cutoff: THUNDERBALL_39_CUTOFF,
+});
+
 export {
   fetchHtml,
   parseLotteryCoUkPage,
@@ -214,9 +231,11 @@ export {
   fetchEuroMillions,
   fetchLotto,
   fetchSetForLife,
+  fetchThunderball,
   LUCKY_STARS_12_CUTOFF,
   LOTTO_59_CUTOFF,
   SET_FOR_LIFE_LAUNCH,
+  THUNDERBALL_39_CUTOFF,
 };
 
 /**
@@ -244,5 +263,11 @@ export const DATA_SOURCES = [
     outFile: "public/data/set-for-life.json",
     source: "https://www.lottery.co.uk/set-for-life/results/archive-{year}",
     fetch: fetchSetForLife,
+  },
+  {
+    id: "thunderball",
+    outFile: "public/data/thunderball.json",
+    source: "https://www.lottery.co.uk/thunderball/results/archive-{year}",
+    fetch: fetchThunderball,
   },
 ];

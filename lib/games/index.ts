@@ -2,6 +2,7 @@ import type { GameConfig } from "./types";
 import { EUROMILLIONS } from "./euromillions";
 import { LOTTO } from "./lotto";
 import { SET_FOR_LIFE } from "./set-for-life";
+import { THUNDERBALL } from "./thunderball";
 
 export type { GameConfig, BallSet } from "./types";
 
@@ -14,6 +15,7 @@ export const GAMES: readonly GameConfig[] = [
   EUROMILLIONS,
   LOTTO,
   SET_FOR_LIFE,
+  THUNDERBALL,
 ] as const;
 
 export const DEFAULT_GAME_ID: string = EUROMILLIONS.id;
