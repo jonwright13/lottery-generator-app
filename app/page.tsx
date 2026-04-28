@@ -7,14 +7,12 @@ import { MatchResults } from "@/components/match-results";
 import { useData } from "@/context/useDataProvider";
 import { useGenerator } from "@/hooks/use-generator";
 
-const MAIN_COUNT = 5;
-
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",
 });
 
 export default function Home() {
-  const { pastNumbers, analysis, genOptions, updateOptions, updatedAt } =
+  const { game, pastNumbers, analysis, genOptions, updateOptions, updatedAt } =
     useData();
 
   const { isGenerating, results, durationMs, generate } = useGenerator();
@@ -28,8 +26,8 @@ export default function Home() {
     );
 
   const combination = results?.bestCombination ?? null;
-  const userMain = combination ? combination.slice(0, MAIN_COUNT) : null;
-  const userLucky = combination ? combination.slice(MAIN_COUNT) : null;
+  const userMain = combination ? combination.slice(0, game.main.count) : null;
+  const userLucky = combination ? combination.slice(game.main.count) : null;
 
   const updatedLabel = (() => {
     const d = new Date(updatedAt);

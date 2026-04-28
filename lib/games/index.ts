@@ -1,14 +1,15 @@
 import type { GameConfig } from "./types";
 import { EUROMILLIONS } from "./euromillions";
+import { LOTTO } from "./lotto";
 
 export type { GameConfig, BallSet } from "./types";
 
 /**
  * Registry of every game the app knows about. Order is the order the game
- * switcher will render in (added in a later branch). The first entry is
- * the default game until DEFAULT_GAME_ID below is changed.
+ * switcher renders in. The first entry is the default game until
+ * DEFAULT_GAME_ID below is changed.
  */
-export const GAMES: readonly GameConfig[] = [EUROMILLIONS] as const;
+export const GAMES: readonly GameConfig[] = [EUROMILLIONS, LOTTO] as const;
 
 export const DEFAULT_GAME_ID: string = EUROMILLIONS.id;
 
