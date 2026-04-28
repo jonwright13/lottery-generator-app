@@ -34,6 +34,13 @@ interface PreviousDrawOverlap {
   pairsAnalysed: number;
 }
 
+interface ConsecutiveRunDistribution {
+  /** Map from longest consecutive-run length within a draw → number of draws with that as their longest run. Length 1 = no consecutive numbers at all. */
+  byLength: Record<number, number>;
+  /** Total historical draws inspected. */
+  drawsAnalysed: number;
+}
+
 interface ArithmeticProgressionAnalysis {
   /** Number of historical draws whose main numbers contain an AP-3 with d ≥ 2. */
   drawsWithAp3: number;
@@ -86,6 +93,7 @@ export class ThresholdCriteria {
   previousDrawOverlapData: PreviousDrawOverlap;
   maxPreviousDrawOverlap: number;
   arithmeticProgressionData: ArithmeticProgressionAnalysis;
+  consecutiveRunData: ConsecutiveRunDistribution;
   pairCoOccurrenceData: PairCoOccurrenceAnalysis;
   tripletCoOccurrenceData: TripletCoOccurrenceAnalysis;
 
@@ -153,6 +161,11 @@ export class ThresholdCriteria {
 
     this.arithmeticProgressionData =
       this.analyzeArithmeticProgressionDistribution(lotteryNumbers, mainCount);
+
+    this.consecutiveRunData = this.analyzeConsecutiveRunDistribution(
+      lotteryNumbers,
+      mainCount,
+    );
 
     this.pairCoOccurrenceData = this.analyzePairCoOccurrence(
       lotteryNumbers,
@@ -243,6 +256,31 @@ export class ThresholdCriteria {
       mainCount,
       maxMain,
     };
+  }
+
+  analyzeConsecutiveRunDistribution(
+    lotteryNumbers: LotteryTuple[],
+    mainCount: number,
+  ): ConsecutiveRunDistribution {
+    const byLength: Record<number, number> = {};
+    for (const draw of lotteryNumbers) {
+      const nums = draw
+        .slice(0, mainCount)
+        .map((n) => parseInt(n, 10))
+        .sort((a, b) => a - b);
+      let maxRun = 1;
+      let currentRun = 1;
+      for (let i = 1; i < nums.length; i++) {
+        if (nums[i] === nums[i - 1] + 1) {
+          currentRun += 1;
+          if (currentRun > maxRun) maxRun = currentRun;
+        } else if (nums[i] !== nums[i - 1]) {
+          currentRun = 1;
+        }
+      }
+      byLength[maxRun] = (byLength[maxRun] ?? 0) + 1;
+    }
+    return { byLength, drawsAnalysed: lotteryNumbers.length };
   }
 
   analyzeArithmeticProgressionDistribution(
