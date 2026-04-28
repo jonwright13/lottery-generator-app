@@ -7,20 +7,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { GameSwitcher } from "@/components/game-switcher";
+import { useGameAwareHref } from "@/hooks/use-game-aware-href";
 import { cn } from "@/lib/utils";
 import { MenuIcon } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { ThemeToggle } from "./theme-toggle";
-
-// Preserve `?game=` across in-app navigation so switching pages doesn't
-// silently revert a non-default game back to the default. Pages always
-// read the active game from the URL.
-const useGameAwareHref = () => {
-  const sp = useSearchParams();
-  const game = sp.get("game");
-  return (path: string) => (game ? `${path}?game=${game}` : path);
-};
 
 interface NavLinkProps {
   href: string;
