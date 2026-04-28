@@ -40,7 +40,7 @@ export const GeneratorContainer = ({
     list: savedList,
     add: saveNumbers,
     remove: removeSaved,
-  } = useSavedNumbers();
+  } = useSavedNumbers(game.id);
 
   const combination = results?.bestCombination ?? null;
   const currentKey = combination?.join(",") ?? null;

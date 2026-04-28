@@ -68,8 +68,8 @@ interface Props {
 }
 
 export const SavedSetsList = ({ onSelect }: Props) => {
-  const { pastNumbers } = useData();
-  const { list, remove, hydrated } = useSavedNumbers();
+  const { game, pastNumbers } = useData();
+  const { list, remove, hydrated } = useSavedNumbers(game.id);
 
   const pastSet = useMemo(
     () => new Set(pastNumbers.map((row) => row.join(","))),
@@ -78,7 +78,7 @@ export const SavedSetsList = ({ onSelect }: Props) => {
 
   return (
     <Card className="flex flex-col gap-y-2 p-4 w-full">
-      <h3 className="text-lg font-semibold">Saved sets</h3>
+      <h3 className="text-lg font-semibold">Saved {game.name} sets</h3>
       {onSelect && (
         <p className="text-sm text-muted-foreground">
           Click any set to load it into the form.
@@ -86,8 +86,8 @@ export const SavedSetsList = ({ onSelect }: Props) => {
       )}
       {!hydrated ? null : list.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No saved numbers yet. Generate some on the home page and tap the
-          bookmark to save them here.
+          No saved {game.name} sets yet. Generate some on the home page and
+          tap the bookmark to save them here.
         </p>
       ) : (
         <div className="flex flex-col">

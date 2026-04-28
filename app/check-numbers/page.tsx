@@ -26,7 +26,7 @@ const CheckNumbersPage = () => {
 
   const [values, setValues] = useState<Values>(emptyValues);
   const { list: savedList, add: saveNumbers, remove: removeSaved } =
-    useSavedNumbers();
+    useSavedNumbers(game.id);
 
   const padded = useMemo(() => {
     const out: string[] = [];
