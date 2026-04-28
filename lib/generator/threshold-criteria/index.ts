@@ -20,6 +20,13 @@ interface MultiplesDistributionResult {
   maxAllowed: number;
 }
 
+interface MultiplesDistributionData {
+  /** base (2..10) → distribution of "draws with N multiples of base" keyed by N. */
+  byBase: Record<number, Record<number, number>>;
+  /** Total historical draws inspected. */
+  drawsAnalysed: number;
+}
+
 interface LastDigitDistribution {
   /** Total occurrences of each last digit (0..9) across mains, summed over all draws. */
   perDigitTotals: Record<number, number>;
@@ -85,6 +92,7 @@ export class ThresholdCriteria {
   maxMainGapThreshold: number;
   maxLuckyGapThreshold: number;
   maxMultiplesAllowed: Record<number, number>;
+  multiplesDistributionData: MultiplesDistributionData;
   distribution: DistributionAnalysis[];
   gapDistributionData: GapDistribution;
   positionCounters: Array<Record<string, number>>;
@@ -140,12 +148,24 @@ export class ThresholdCriteria {
     this.maxMainGapThreshold = range[0];
     this.maxLuckyGapThreshold = range[1];
 
-    this.maxMultiplesAllowed = this.generateMaxMultiplesAllowed(
-      lotteryNumbers,
-      mainCount,
-      Array.from({ length: 9 }, (_, i) => i + 2), // 2..10
-      debug,
-    );
+    const multiplesBases = Array.from({ length: 9 }, (_, i) => i + 2); // 2..10
+    const maxMultiplesDict: Record<number, number> = {};
+    const multiplesByBase: Record<number, Record<number, number>> = {};
+    for (const base of multiplesBases) {
+      const { distribution, maxAllowed } = this.analyzeMultiplesDistribution(
+        lotteryNumbers,
+        mainCount,
+        base,
+        debug,
+      );
+      maxMultiplesDict[base] = maxAllowed;
+      multiplesByBase[base] = distribution;
+    }
+    this.maxMultiplesAllowed = maxMultiplesDict;
+    this.multiplesDistributionData = {
+      byBase: multiplesByBase,
+      drawsAnalysed: lotteryNumbers.length,
+    };
 
     this.positionCounters = this.getPositionCounters(lotteryNumbers);
 
@@ -688,34 +708,6 @@ export class ThresholdCriteria {
       main: { gapCounters: mainGapCounters },
       lucky: { gapCounters: luckyGapCounters },
     };
-  }
-
-  generateMaxMultiplesAllowed(
-    lotteryNumbers: LotteryTuple[],
-    mainCount: number,
-    bases: number[] = Array.from({ length: 9 }, (_, i) => i + 2), // 2..10
-    debug = false,
-  ): Record<number, number> {
-    const maxMultiplesDict: Record<number, number> = {};
-
-    for (const base of bases) {
-      const { maxAllowed } = this.analyzeMultiplesDistribution(
-        lotteryNumbers,
-        mainCount,
-        base,
-        debug,
-      );
-      maxMultiplesDict[base] = maxAllowed;
-    }
-
-    if (debug) {
-      console.log("\nFinal maxMultiplesAllowed dict:");
-      for (const [baseStr, maxCount] of Object.entries(maxMultiplesDict)) {
-        console.log(`  ${baseStr}: ${maxCount}`);
-      }
-    }
-
-    return maxMultiplesDict;
   }
 
   analyzeMultiplesDistribution(
