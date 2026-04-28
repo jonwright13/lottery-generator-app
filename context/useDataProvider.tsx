@@ -14,6 +14,7 @@ import {
   getGameById,
 } from "@/lib/games";
 import { buildFieldsForGame, type FieldDef } from "@/constants";
+import { useSavedControls } from "@/hooks/use-saved-controls";
 import {
   createContext,
   useCallback,
@@ -75,9 +76,15 @@ interface DataContextValue {
   dates: string[];
   genOptions: GenerateValidNumberSetOptions;
   seededOptions: GenerateValidNumberSetOptions;
+  savedOptions: GenerateValidNumberSetOptions | null;
   updateOptions: UpdateOptions;
   resetOptions: () => void;
+  saveOptions: () => void;
+  restoreSavedOptions: () => void;
+  clearSavedOptions: () => void;
   isAtDefaults: boolean;
+  isAtSaved: boolean;
+  hasSavedOptions: boolean;
 }
 
 interface DataProviderProps {
@@ -119,18 +126,33 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       };
     }, [game]);
 
-  // When the URL game changes, reseed genOptions so threshold values from
-  // (e.g.) EuroMillions don't bleed into Lotto's analysis. Tracking the
-  // previous game id with another piece of state and setting state during
-  // render is the React-blessed way to derive state from props without
-  // an extra effect — React discards the in-flight render and retries
-  // with the new state. See:
+  // Per-game saved Controls preset (one per game id; localStorage-backed).
+  // Hydrates after the first paint via useSyncExternalStore — that's why we
+  // need the bootKey dance below to swap genOptions in once the saved entry
+  // becomes visible.
+  const {
+    savedOptions,
+    save: persistSavedOptions,
+    clear: clearStoredOptions,
+    hydrated: savedHydrated,
+  } = useSavedControls(game.id);
+
+  // When the URL game changes — or when the saved preset finishes hydrating
+  // for the first time — reseed genOptions. We prefer the saved preset over
+  // the data-derived defaults so a returning user doesn't have to re-tweak
+  // every visit. Tracking previous boot state with another piece of state and
+  // setting state during render is the React-blessed way to derive state from
+  // props without an extra effect — React discards the in-flight render and
+  // retries with the new state.
   // https://react.dev/reference/react/useState#storing-information-from-previous-renders
-  const [genOptions, setGenOptions] = useState(seededOptions);
-  const [prevGameId, setPrevGameId] = useState(game.id);
-  if (prevGameId !== game.id) {
-    setPrevGameId(game.id);
-    setGenOptions(seededOptions);
+  const [genOptions, setGenOptions] = useState<GenerateValidNumberSetOptions>(
+    savedOptions ?? seededOptions,
+  );
+  const targetBootKey = `${game.id}::${savedHydrated ? "hydrated" : "initial"}`;
+  const [prevBootKey, setPrevBootKey] = useState<string>(targetBootKey);
+  if (prevBootKey !== targetBootKey) {
+    setPrevBootKey(targetBootKey);
+    setGenOptions(savedOptions ?? seededOptions);
   }
 
   const updateOptions = useCallback<UpdateOptions>((key, value) => {
@@ -141,6 +163,18 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     setGenOptions(seededOptions);
   }, [seededOptions]);
 
+  const saveOptions = useCallback(() => {
+    persistSavedOptions(genOptions);
+  }, [persistSavedOptions, genOptions]);
+
+  const restoreSavedOptions = useCallback(() => {
+    if (savedOptions) setGenOptions(savedOptions);
+  }, [savedOptions]);
+
+  const clearSavedOptions = useCallback(() => {
+    clearStoredOptions();
+  }, [clearStoredOptions]);
+
   // Both objects come from the same code paths (DEFAULT_OPTIONS spread + the
   // same ordered seed keys), so JSON.stringify gives stable key order and a
   // correct deep equality without pulling in a comparator.
@@ -148,6 +182,15 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     () => JSON.stringify(genOptions) === JSON.stringify(seededOptions),
     [genOptions, seededOptions],
   );
+
+  const isAtSaved = useMemo(
+    () =>
+      savedOptions != null &&
+      JSON.stringify(genOptions) === JSON.stringify(savedOptions),
+    [genOptions, savedOptions],
+  );
+
+  const hasSavedOptions = savedOptions != null;
 
   const value = useMemo(
     () => ({
@@ -159,9 +202,15 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       analysis,
       genOptions,
       seededOptions,
+      savedOptions,
       updateOptions,
       resetOptions,
+      saveOptions,
+      restoreSavedOptions,
+      clearSavedOptions,
       isAtDefaults,
+      isAtSaved,
+      hasSavedOptions,
     }),
     [
       game,
@@ -172,9 +221,15 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       analysis,
       genOptions,
       seededOptions,
+      savedOptions,
       updateOptions,
       resetOptions,
+      saveOptions,
+      restoreSavedOptions,
+      clearSavedOptions,
       isAtDefaults,
+      isAtSaved,
+      hasSavedOptions,
     ],
   );
 
