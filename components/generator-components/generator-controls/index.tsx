@@ -45,10 +45,25 @@ type NumericOptionKey = {
     : never;
 }[keyof GenerateValidNumberSetOptions];
 
-const TriggerRow = ({ label, value }: { label: string; value: string }) => (
-  <span className="flex w-full items-center justify-between gap-3 pr-2">
-    <span>{label}</span>
-    <span className="text-muted-foreground tabular-nums font-normal text-xs">
+const TriggerRow = ({
+  label,
+  helper,
+  value,
+}: {
+  label: string;
+  helper?: string;
+  value: string;
+}) => (
+  <span className="flex w-full items-start justify-between gap-3 pr-2">
+    <span className="flex flex-col gap-y-0.5 text-left">
+      <span>{label}</span>
+      {helper && (
+        <span className="text-xs text-muted-foreground/80 font-normal">
+          {helper}
+        </span>
+      )}
+    </span>
+    <span className="text-muted-foreground tabular-nums font-normal text-xs shrink-0 pt-0.5">
       {value}
     </span>
   </span>
@@ -99,7 +114,8 @@ export const GeneratorControls = ({
         <AccordionItem value="max-iterations">
           <AccordionTrigger>
             <TriggerRow
-              label="Maximum Iterations"
+              label="How long to keep trying"
+              helper="Maximum iterations"
               value={genOptions.maxIterations.toLocaleString()}
             />
           </AccordionTrigger>
@@ -113,7 +129,8 @@ export const GeneratorControls = ({
         <AccordionItem value="score">
           <AccordionTrigger>
             <TriggerRow
-              label="Minimum Positional Frequency Score"
+              label="How closely numbers match historical positions"
+              helper="Min positional frequency score"
               value={`${genOptions.minScore}%`}
             />
           </AccordionTrigger>
@@ -127,7 +144,8 @@ export const GeneratorControls = ({
         <AccordionItem value="pair-score-weight">
           <AccordionTrigger>
             <TriggerRow
-              label="Pair-Score Weight"
+              label="How much to reward pairs that often draw together"
+              helper="Pair-score weight"
               value={`${Math.round(genOptions.pairScoreWeight * 100)}%`}
             />
           </AccordionTrigger>
@@ -141,7 +159,8 @@ export const GeneratorControls = ({
         <AccordionItem value="recent-bias">
           <AccordionTrigger>
             <TriggerRow
-              label="Recent-Frequency Bias"
+              label="How much to favour recently-drawn numbers"
+              helper="Recent-frequency bias"
               value={
                 genOptions.recentBias > 0 && genOptions.recentWindowSize > 0
                   ? `${Math.round(genOptions.recentBias * 100)}% of last ${genOptions.recentWindowSize}`
@@ -159,7 +178,8 @@ export const GeneratorControls = ({
         <AccordionItem value="min-max-sum">
           <AccordionTrigger>
             <TriggerRow
-              label="Min/Max Sum"
+              label="Total of the main numbers"
+              helper="Sum range"
               value={`${genOptions.sumMin}–${genOptions.sumMax}`}
             />
           </AccordionTrigger>
@@ -173,7 +193,8 @@ export const GeneratorControls = ({
         <AccordionItem value="cluster-max">
           <AccordionTrigger>
             <TriggerRow
-              label="Cluster Max"
+              label="How clumpy the numbers can be"
+              helper="Cluster max (per group of 10)"
               value={String(genOptions.clusterMax)}
             />
           </AccordionTrigger>
@@ -187,7 +208,8 @@ export const GeneratorControls = ({
         <AccordionItem value="last-digit">
           <AccordionTrigger>
             <TriggerRow
-              label="Max Same Last Digit"
+              label="How many numbers can share a last digit"
+              helper="Last-digit spread"
               value={String(genOptions.maxSameLastDigit)}
             />
           </AccordionTrigger>
@@ -201,7 +223,8 @@ export const GeneratorControls = ({
         <AccordionItem value="previous-draw-overlap">
           <AccordionTrigger>
             <TriggerRow
-              label="Max Overlap w/ Previous Draw"
+              label="How many numbers can repeat from the last draw"
+              helper="Previous-draw overlap"
               value={String(genOptions.maxPreviousDrawOverlap)}
             />
           </AccordionTrigger>
@@ -215,7 +238,8 @@ export const GeneratorControls = ({
         <AccordionItem value="odd-even-dist">
           <AccordionTrigger>
             <TriggerRow
-              label="Odd/Even Distribution"
+              label="Balance of odd and even numbers"
+              helper="Odd/even split"
               value={`${genOptions.oddRange[0]}–${genOptions.oddRange[1]} odd`}
             />
           </AccordionTrigger>
@@ -230,7 +254,8 @@ export const GeneratorControls = ({
         <AccordionItem value="gap-dist">
           <AccordionTrigger>
             <TriggerRow
-              label="Gap Distribution"
+              label="How far apart the numbers can sit"
+              helper="Gap distribution"
               value={
                 showBonusGap
                   ? `main ≤ ${genOptions.maxMainGapThreshold}, ${bonusLabel} ≤ ${genOptions.maxLuckyGapThreshold}`
