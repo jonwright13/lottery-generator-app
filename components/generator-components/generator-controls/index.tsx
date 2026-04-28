@@ -32,6 +32,7 @@ import {
   PositionalFrequencyScoreItem,
   PreviousDrawOverlapItem,
   RecentBiasItem,
+  TripletScoreWeightItem,
 } from "./accordion-items";
 
 interface Props extends GeneratorProps {
@@ -173,6 +174,22 @@ export const GeneratorControls = ({
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
             <PairScoreWeightItem
+              genOptions={genOptions}
+              updateOptions={updateOptions}
+            />
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="triplet-score-weight">
+          <AccordionTrigger>
+            <TriggerRow
+              label="How much to reward triplets that often draw together"
+              helper="Triplet-score weight (soft tie-breaker)"
+              value={`${Math.round(genOptions.tripletScoreWeight * 100)}%`}
+              modified={isModified("tripletScoreWeight")}
+            />
+          </AccordionTrigger>
+          <AccordionContent className="flex flex-col gap-y-2">
+            <TripletScoreWeightItem
               genOptions={genOptions}
               updateOptions={updateOptions}
             />

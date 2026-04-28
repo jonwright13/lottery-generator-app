@@ -10,6 +10,7 @@ export interface WorkerRequest {
   genOptions: Partial<GenerateValidNumberSetOptions>;
   positionCounters?: Array<Record<string, number>>;
   pairCounts?: Record<string, number>;
+  tripletCounts?: Record<string, number>;
 }
 
 export type WorkerResponse =
@@ -18,12 +19,19 @@ export type WorkerResponse =
 
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
   try {
-    const { pastNumbers, genOptions, positionCounters, pairCounts } = e.data;
+    const {
+      pastNumbers,
+      genOptions,
+      positionCounters,
+      pairCounts,
+      tripletCounts,
+    } = e.data;
     const res = generateValidNumberSet(
       pastNumbers,
       genOptions,
       positionCounters,
       pairCounts,
+      tripletCounts,
     );
     const reply: WorkerResponse = { ok: true, res };
     self.postMessage(reply);
