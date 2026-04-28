@@ -41,6 +41,7 @@ export interface GenerateValidNumberSetResult {
   bestCombination: LotteryTuple | null;
   bestScore: number;
   bestPairScore: number;
+  bestTripletScore: number;
   bestRecentScore: number;
   bestPatternProb: number[] | null;
   iterations: number;
@@ -72,6 +73,7 @@ export interface GenerateValidNumberSetOptions {
   maxSameLastDigit: number;
   maxPreviousDrawOverlap: number;
   pairScoreWeight: number;
+  tripletScoreWeight: number;
   recentWindowSize: number;
   recentBias: number;
   debug: boolean;

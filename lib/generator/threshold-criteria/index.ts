@@ -56,6 +56,19 @@ interface PairCoOccurrenceAnalysis {
   maxMain: number;
 }
 
+interface TripletCoOccurrenceAnalysis {
+  /** Map keyed "a,b,c" with a<b<c of how many historical draws contain all three in main. */
+  tripletCounts: Record<string, number>;
+  /** Mean triplet count across the C(mainMax, 3) triplets that actually appear in history. */
+  meanTripletCount: number;
+  /** Total historical draws inspected. */
+  drawsAnalysed: number;
+  /** Range of values used to mainOnly-slice each tuple. */
+  mainCount: number;
+  /** Highest main number considered (= GameConfig.main.max). */
+  maxMain: number;
+}
+
 export class ThresholdCriteria {
   readonly game: GameConfig;
   maxPatternProbs: Record<string, number>;
@@ -74,6 +87,7 @@ export class ThresholdCriteria {
   maxPreviousDrawOverlap: number;
   arithmeticProgressionData: ArithmeticProgressionAnalysis;
   pairCoOccurrenceData: PairCoOccurrenceAnalysis;
+  tripletCoOccurrenceData: TripletCoOccurrenceAnalysis;
 
   constructor(
     lotteryNumbers: LotteryTuple[],
@@ -145,6 +159,56 @@ export class ThresholdCriteria {
       mainCount,
       mainMax,
     );
+
+    this.tripletCoOccurrenceData = this.analyzeTripletCoOccurrence(
+      lotteryNumbers,
+      mainCount,
+      mainMax,
+    );
+  }
+
+  analyzeTripletCoOccurrence(
+    lotteryNumbers: LotteryTuple[],
+    mainCount: number,
+    maxMain: number,
+  ): TripletCoOccurrenceAnalysis {
+    const tripletCounts: Record<string, number> = {};
+
+    for (const draw of lotteryNumbers) {
+      const nums = draw
+        .slice(0, mainCount)
+        .map((n) => parseInt(n, 10))
+        .sort((a, b) => a - b);
+      for (let i = 0; i < nums.length; i++) {
+        for (let j = i + 1; j < nums.length; j++) {
+          for (let k = j + 1; k < nums.length; k++) {
+            const key = `${nums[i]},${nums[j]},${nums[k]}`;
+            tripletCounts[key] = (tripletCounts[key] ?? 0) + 1;
+          }
+        }
+      }
+    }
+
+    // Mean is computed over the full C(maxMain, 3) space — including triplets
+    // that have never been drawn — so the "is this triplet hot?" comparison
+    // reflects its standing across all *possible* triplets, not just observed
+    // ones. With ~3000 draws this typically yields a value < 2, so the
+    // signal-to-noise here is poor and the score is best treated as a soft
+    // tie-breaker. See ADR / future-ideas notes.
+    const totalPossibleTriplets =
+      maxMain >= 3 ? (maxMain * (maxMain - 1) * (maxMain - 2)) / 6 : 0;
+    let sum = 0;
+    for (const v of Object.values(tripletCounts)) sum += v;
+    const meanTripletCount =
+      totalPossibleTriplets > 0 ? sum / totalPossibleTriplets : 0;
+
+    return {
+      tripletCounts,
+      meanTripletCount,
+      drawsAnalysed: lotteryNumbers.length,
+      mainCount,
+      maxMain,
+    };
   }
 
   analyzePairCoOccurrence(

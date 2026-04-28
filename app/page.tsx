@@ -23,6 +23,12 @@ export default function Home() {
       genOptions,
       analysis.positionCounters,
       analysis.pairCoOccurrenceData.pairCounts,
+      // Pay the marshalling cost (~16-32k entries) only when the user has
+      // actually engaged the triplet score; otherwise the worker rebuild is
+      // skipped entirely and we save the postMessage round-trip too.
+      genOptions.tripletScoreWeight > 0
+        ? analysis.tripletCoOccurrenceData.tripletCounts
+        : undefined,
     );
 
   const combination = results?.bestCombination ?? null;

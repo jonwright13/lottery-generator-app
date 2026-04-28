@@ -266,6 +266,17 @@ export const GeneratorContainer = ({
                   </dd>
                 </>
               )}
+            {results?.bestTripletScore != null &&
+              results.bestTripletScore > 0 && (
+                <>
+                  <dt className="text-muted-foreground">
+                    Triplet-cohesion score
+                  </dt>
+                  <dd className="text-right tabular-nums">
+                    {results.bestTripletScore.toFixed(2)}%
+                  </dd>
+                </>
+              )}
           </dl>
         </>
       )}

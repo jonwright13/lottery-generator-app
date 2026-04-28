@@ -18,6 +18,7 @@ export interface UseGenerator {
     genOptions: GenerateValidNumberSetOptions,
     positionCounters?: Array<Record<string, number>>,
     pairCounts?: Record<string, number>,
+    tripletCounts?: Record<string, number>,
   ) => void;
 }
 
@@ -43,6 +44,7 @@ export function useGenerator(): UseGenerator {
     genOptions,
     positionCounters,
     pairCounts,
+    tripletCounts,
   ) => {
     if (!workerRef.current) throw new Error("Worker not ready");
 
@@ -82,6 +84,7 @@ export function useGenerator(): UseGenerator {
       genOptions,
       positionCounters,
       pairCounts,
+      tripletCounts,
     });
   };
 
