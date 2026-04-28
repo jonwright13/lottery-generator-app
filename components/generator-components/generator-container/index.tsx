@@ -15,9 +15,10 @@ import {
   type GenerateValidNumberSetResult,
   type LotteryTuple,
 } from "@/lib/generator";
+import { countMatchesByTier } from "@/lib/lottery-match";
 import { cn } from "@/lib/utils";
 import { BookmarkCheckIcon, BookmarkIcon } from "lucide-react";
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import { toast } from "sonner";
 
 interface Props {
@@ -33,9 +34,10 @@ export const GeneratorContainer = ({
   durationMs,
   onGenerate,
 }: Props) => {
-  const { game } = useData();
+  const { game, pastNumbers } = useData();
   const mainCount = game.main.count;
   const bonusLabel = game.bonus.label;
+  const bonusLower = bonusLabel.toLowerCase();
   const {
     list: savedList,
     add: saveNumbers,
@@ -47,6 +49,37 @@ export const GeneratorContainer = ({
   const savedEntry = currentKey
     ? savedList.find((s) => s.numbers.join(",") === currentKey)
     : undefined;
+
+  // Headline summary so the user can see "is this set worth keeping?" without
+  // scrolling to the Historical Matches card. Uses the full dataset (no time
+  // window) — that's the definitive answer; MatchResults still provides the
+  // filtered exploration.
+  const headline = useMemo(() => {
+    if (!combination) return null;
+    const userMain = combination.slice(0, mainCount);
+    const userLucky = combination.slice(mainCount);
+    const tiers = countMatchesByTier(userMain, userLucky, pastNumbers, game);
+    const exact = tiers.find(
+      (t) => t.mainHits === mainCount && t.luckyHits === game.bonus.count,
+    );
+    if (exact && exact.draws > 0) {
+      return {
+        kind: "jackpot" as const,
+        text: `This exact combination has been drawn before — ${exact.draws} ${exact.draws === 1 ? "time" : "times"}.`,
+      };
+    }
+    const best = tiers.find((t) => t.draws > 0);
+    if (!best) {
+      return {
+        kind: "clean" as const,
+        text: "No prize-tier match in this game's history.",
+      };
+    }
+    return {
+      kind: "partial" as const,
+      text: `Best historical match: ${best.mainHits} main + ${best.luckyHits} ${bonusLower} · ${best.draws} ${best.draws === 1 ? "draw" : "draws"}.`,
+    };
+  }, [combination, pastNumbers, game, mainCount, bonusLower]);
 
   const handleToggleSave = (combo: LotteryTuple) => {
     if (savedEntry) {
@@ -152,6 +185,22 @@ export const GeneratorContainer = ({
                 })}
               </ol>
             </Card>
+
+            {headline && (
+              <p
+                className={cn(
+                  "text-sm text-center px-2",
+                  headline.kind === "jackpot"
+                    ? "text-amber-700 dark:text-amber-300 font-medium"
+                    : headline.kind === "clean"
+                      ? "text-emerald-700 dark:text-emerald-300"
+                      : "text-muted-foreground",
+                )}
+                aria-live="polite"
+              >
+                {headline.text}
+              </p>
+            )}
 
             <div className="flex gap-x-2 justify-end">
               <Tooltip>
