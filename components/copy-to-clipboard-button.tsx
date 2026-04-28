@@ -2,6 +2,7 @@
 
 import { CopyIcon } from "lucide-react";
 import { Button } from "./ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { toast } from "sonner";
 
 export const CopyToClipboardButton = ({
@@ -20,8 +21,19 @@ export const CopyToClipboardButton = ({
   if (!txtToCopy) return null;
 
   return (
-    <Button onClick={copyToClipboard}>
-      <CopyIcon />
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={copyToClipboard}
+          aria-label="Copy numbers to clipboard"
+        >
+          <CopyIcon />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Copy numbers</TooltipContent>
+    </Tooltip>
   );
 };

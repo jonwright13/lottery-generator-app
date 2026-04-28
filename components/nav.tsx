@@ -6,19 +6,53 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { GameSwitcher } from "@/components/game-switcher";
+import { useGameAwareHref } from "@/hooks/use-game-aware-href";
+import { cn } from "@/lib/utils";
 import { MenuIcon } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ThemeToggle } from "./theme-toggle";
 
-export const Navbar = () => {
+interface NavLinkProps {
+  href: string;
+  path: string;
+  label: string;
+}
+
+const NavLink = ({ href, path, label }: NavLinkProps) => {
+  const pathname = usePathname();
+  const isActive = pathname === path;
   return (
-    <header className="flex gap-x-8 justify-between border p-4 items-center w-full">
-      <Link
-        href="/"
-        className="text-base lg:text-lg font-medium lg:font-semibold hover:text-accent-foreground hover:underline"
-      >
-        <h1>Lottery Number Generator</h1>
-      </Link>
+    <Link
+      href={href}
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        "transition-colors hover:underline underline-offset-4 decoration-2",
+        isActive
+          ? "text-foreground underline"
+          : "text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {label}
+    </Link>
+  );
+};
+
+export const Navbar = () => {
+  const withGame = useGameAwareHref();
+
+  return (
+    <header className="flex gap-x-4 lg:gap-x-8 justify-between border p-4 items-center w-full">
+      <div className="flex items-center gap-x-3 lg:gap-x-4 min-w-0">
+        <Link
+          href={withGame("/")}
+          className="text-base lg:text-lg font-medium lg:font-semibold hover:text-accent-foreground hover:underline truncate"
+        >
+          <h1>Lottery Number Generator</h1>
+        </Link>
+        <GameSwitcher />
+      </div>
 
       {/* Large screen navbar */}
       <div className="hidden lg:flex gap-x-8 items-center">
@@ -46,28 +80,36 @@ export const Navbar = () => {
 };
 
 const NavItems = () => {
+  const withGame = useGameAwareHref();
   return (
     <nav>
       <ul className="flex flex-col lg:flex-row gap-2 lg:gap-8 items-start lg:items-center">
         <li>
-          <Link href="/" className="hover:underline">
-            Generate
-          </Link>
+          <NavLink href={withGame("/")} path="/" label="Generate" />
         </li>
         <li>
-          <Link href="/check-numbers" className="hover:underline">
-            Check Numbers
-          </Link>
+          <NavLink
+            href={withGame("/check-numbers")}
+            path="/check-numbers"
+            label="Check Numbers"
+          />
         </li>
         <li>
-          <Link href="/historical" className="hover:underline">
-            Historical
-          </Link>
+          <NavLink
+            href={withGame("/analysis")}
+            path="/analysis"
+            label="Analysis"
+          />
         </li>
         <li>
-          <Link href="/about" className="hover:underline">
-            About
-          </Link>
+          <NavLink
+            href={withGame("/historical")}
+            path="/historical"
+            label="Historical"
+          />
+        </li>
+        <li>
+          <NavLink href={withGame("/about")} path="/about" label="About" />
         </li>
       </ul>
     </nav>

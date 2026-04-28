@@ -27,5 +27,11 @@ export const DEFAULT_OPTIONS: GenerateValidNumberSetOptions = {
   },
   clusterMax: 3,
   clusterGroupSize: 10,
+  maxSameLastDigit: 3,
+  maxPreviousDrawOverlap: 2,
+  pairScoreWeight: 0,
+  tripletScoreWeight: 0,
+  recentWindowSize: 50,
+  recentBias: 0,
   debug: false,
 } as const;

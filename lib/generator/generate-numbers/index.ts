@@ -22,6 +22,9 @@ const emptyRejectionCounts = (): RejectionCounts => ({
   gap_exceeds_threshold: 0,
   sum_in_range: 0,
   historical_duplicate: 0,
+  last_digit_repeat: 0,
+  previous_draw_overlap: 0,
+  arithmetic_progression: 0,
 });
 
 function buildPositionCounters(
@@ -38,10 +41,54 @@ function buildPositionCounters(
   });
 }
 
+function buildPairCounts(
+  lotteryNumbers: LotteryTuple[],
+  countMain: number,
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const draw of lotteryNumbers) {
+    const nums = draw
+      .slice(0, countMain)
+      .map((n) => parseInt(n, 10))
+      .sort((a, b) => a - b);
+    for (let i = 0; i < nums.length; i++) {
+      for (let j = i + 1; j < nums.length; j++) {
+        const key = `${nums[i]},${nums[j]}`;
+        counts[key] = (counts[key] ?? 0) + 1;
+      }
+    }
+  }
+  return counts;
+}
+
+function buildTripletCounts(
+  lotteryNumbers: LotteryTuple[],
+  countMain: number,
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const draw of lotteryNumbers) {
+    const nums = draw
+      .slice(0, countMain)
+      .map((n) => parseInt(n, 10))
+      .sort((a, b) => a - b);
+    for (let i = 0; i < nums.length; i++) {
+      for (let j = i + 1; j < nums.length; j++) {
+        for (let k = j + 1; k < nums.length; k++) {
+          const key = `${nums[i]},${nums[j]},${nums[k]}`;
+          counts[key] = (counts[key] ?? 0) + 1;
+        }
+      }
+    }
+  }
+  return counts;
+}
+
 export function generateValidNumberSet(
   lotteryNumbers: LotteryTuple[],
   options: Partial<GenerateValidNumberSetOptions> = {},
   precomputedPositionCounters?: Array<Record<string, number>>,
+  precomputedPairCounts?: Record<string, number>,
+  precomputedTripletCounts?: Record<string, number>,
 ): GenerateValidNumberSetResult {
   const {
     minMain = DEFAULT_OPTIONS.minMain,
@@ -60,14 +107,35 @@ export function generateValidNumberSet(
     maxMultiplesAllowed = DEFAULT_OPTIONS.maxMultiplesAllowed,
     clusterMax = DEFAULT_OPTIONS.clusterMax,
     clusterGroupSize = DEFAULT_OPTIONS.clusterGroupSize,
+    maxSameLastDigit = DEFAULT_OPTIONS.maxSameLastDigit,
+    maxPreviousDrawOverlap = DEFAULT_OPTIONS.maxPreviousDrawOverlap,
+    pairScoreWeight = DEFAULT_OPTIONS.pairScoreWeight,
+    tripletScoreWeight = DEFAULT_OPTIONS.tripletScoreWeight,
+    recentWindowSize = DEFAULT_OPTIONS.recentWindowSize,
+    recentBias = DEFAULT_OPTIONS.recentBias,
     debug = DEFAULT_OPTIONS.debug,
   } = options;
+
+  const weight = Math.min(1, Math.max(0, pairScoreWeight));
+  const tripletWeight = Math.min(1, Math.max(0, tripletScoreWeight));
+  const recentWeight = Math.min(1, Math.max(0, recentBias));
+  const effectiveRecentWindow = Math.max(
+    0,
+    Math.min(recentWindowSize, lotteryNumbers.length),
+  );
+  const recentEnabled = recentWeight > 0 && effectiveRecentWindow > 0;
+  const recentPositionCounters = recentEnabled
+    ? buildPositionCounters(lotteryNumbers.slice(0, effectiveRecentWindow))
+    : null;
 
   if (debug) {
     console.log(
       `\nRunning Lottery Number Generator. Max Iterations: ${maxIterations}`,
     );
   }
+
+  const previousDrawMain: number[] =
+    lotteryNumbers[0]?.slice(0, countMain).map((n) => parseInt(n, 10)) ?? [];
 
   const ruleOpts: RuleOptions = {
     maxMultiplesAllowed,
@@ -79,6 +147,9 @@ export function generateValidNumberSet(
     clusterMax,
     clusterGroupSize,
     maxMain,
+    maxSameLastDigit,
+    maxPreviousDrawOverlap,
+    previousDrawMain,
   };
 
   const rejections = emptyRejectionCounts();
@@ -90,12 +161,25 @@ export function generateValidNumberSet(
   const totalDraws = lotteryNumbers.length;
   const positionCounters =
     precomputedPositionCounters ?? buildPositionCounters(lotteryNumbers);
+  const pairCounts =
+    precomputedPairCounts ?? buildPairCounts(lotteryNumbers, countMain);
+  // Triplet matrix is only built if the user is asking for it. C(maxMain, 3)
+  // can run to ~32k entries on Lotto and the per-iteration scoring is C(N,3)
+  // dictionary lookups — pay-as-you-go for users who actually weight it.
+  const tripletCounts =
+    tripletWeight > 0
+      ? (precomputedTripletCounts ?? buildTripletCounts(lotteryNumbers, countMain))
+      : null;
 
   const triedMainCombinations = new Set<string>();
   const triedLuckyCombinations = new Set<string>();
   const triedCombinedCombinations = new Set<string>();
 
   let bestScore = 0;
+  let bestPairScore = 0;
+  let bestTripletScore = 0;
+  let bestRecentScore = 0;
+  let bestCombinedScore = -1;
   let bestCombination: LotteryTuple | null = null;
   let bestPatternProb: number[] | null = null;
   let bestIteration = 0;
@@ -169,24 +253,86 @@ export function generateValidNumberSet(
     }
     const avgScore = probs.reduce((a, b) => a + b, 0) / probs.length;
 
-    if (avgScore > bestScore) {
+    let recentScore = 0;
+    if (recentEnabled && recentPositionCounters) {
+      let recentSum = 0;
+      for (let index = 0; index < combinedTupleArr.length; index++) {
+        const numStr = combinedTupleArr[index];
+        const count = recentPositionCounters[index]?.[numStr] ?? 0;
+        recentSum += (count / effectiveRecentWindow) * 100;
+      }
+      recentScore = recentSum / combinedTupleArr.length;
+    }
+
+    const positionBlended = recentEnabled
+      ? (1 - recentWeight) * avgScore + recentWeight * recentScore
+      : avgScore;
+
+    const sortedMain = [...mainNums].sort((a, b) => a - b);
+
+    let pairScore = 0;
+    if (totalDraws > 0) {
+      let pairSum = 0;
+      let pairN = 0;
+      for (let i = 0; i < sortedMain.length; i++) {
+        for (let j = i + 1; j < sortedMain.length; j++) {
+          const key = `${sortedMain[i]},${sortedMain[j]}`;
+          pairSum += pairCounts[key] ?? 0;
+          pairN += 1;
+        }
+      }
+      pairScore = pairN > 0 ? ((pairSum / pairN) / totalDraws) * 100 : 0;
+    }
+
+    let tripletScore = 0;
+    if (tripletCounts && totalDraws > 0) {
+      let tripletSum = 0;
+      let tripletN = 0;
+      for (let i = 0; i < sortedMain.length; i++) {
+        for (let j = i + 1; j < sortedMain.length; j++) {
+          for (let k = j + 1; k < sortedMain.length; k++) {
+            const key = `${sortedMain[i]},${sortedMain[j]},${sortedMain[k]}`;
+            tripletSum += tripletCounts[key] ?? 0;
+            tripletN += 1;
+          }
+        }
+      }
+      tripletScore = tripletN > 0 ? ((tripletSum / tripletN) / totalDraws) * 100 : 0;
+    }
+
+    // Layered blend: pair stacks on top of position, triplet stacks on top of
+    // the pair-blended result. Each weight is independent and well-defined as
+    // "how strongly to pull the score toward this signal" — and turning either
+    // weight to 0 cleanly disables that layer without affecting the others.
+    const pairBlended = (1 - weight) * positionBlended + weight * pairScore;
+    const combinedScore =
+      (1 - tripletWeight) * pairBlended + tripletWeight * tripletScore;
+
+    if (combinedScore > bestCombinedScore) {
+      bestCombinedScore = combinedScore;
       bestScore = avgScore;
+      bestPairScore = pairScore;
+      bestTripletScore = tripletScore;
+      bestRecentScore = recentScore;
       bestCombination = combinedTupleArr as LotteryTuple;
       bestPatternProb = probs;
       bestIteration = iteration;
     }
 
-    if (avgScore >= minScore) {
+    if (combinedScore >= minScore) {
       if (debug) {
         console.log(
-          `Iteration ${iteration}: valid combination found, score ${avgScore.toFixed(
+          `Iteration ${iteration}: valid combination found, position ${avgScore.toFixed(
             2,
-          )}%`,
+          )}% recent ${recentScore.toFixed(2)}% pair ${pairScore.toFixed(2)}% triplet ${tripletScore.toFixed(2)}% combined ${combinedScore.toFixed(2)}%`,
         );
       }
       return {
         bestCombination,
         bestScore,
+        bestPairScore,
+        bestTripletScore,
+        bestRecentScore,
         bestPatternProb,
         iterations: iteration,
         rejections,
@@ -205,6 +351,9 @@ export function generateValidNumberSet(
   return {
     bestCombination,
     bestScore,
+    bestPairScore,
+    bestTripletScore,
+    bestRecentScore,
     bestPatternProb,
     iterations: maxIterations,
     rejections,

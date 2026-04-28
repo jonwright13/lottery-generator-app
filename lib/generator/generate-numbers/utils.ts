@@ -131,3 +131,47 @@ export function isSumInRange(
   const total = mainNums.reduce((acc, n) => acc + n, 0);
   return total >= minSum && total <= maxSum;
 }
+/**
+ * Returns the largest count of numbers sharing the same last digit (0..9).
+ */
+
+export function maxSameLastDigitCount(numbers: number[]): number {
+  const counts: Record<number, number> = {};
+  let max = 0;
+  for (const n of numbers) {
+    const d = n % 10;
+    counts[d] = (counts[d] ?? 0) + 1;
+    if (counts[d] > max) max = counts[d];
+  }
+  return max;
+}
+/**
+ * Returns true if `numbers` contains an arithmetic progression of `length` with
+ * common difference ≥ `minDiff`. minDiff defaults to 2 because runs with d=1
+ * are already caught by countMaxConsecutiveRun.
+ */
+
+export function containsArithmeticProgression(
+  numbers: number[],
+  length = 3,
+  minDiff = 2,
+): boolean {
+  if (numbers.length < length) return false;
+  const sorted = [...numbers].sort((a, b) => a - b);
+  const set = new Set(sorted);
+  for (let i = 0; i < sorted.length; i++) {
+    for (let j = i + 1; j < sorted.length; j++) {
+      const d = sorted[j] - sorted[i];
+      if (d < minDiff) continue;
+      let ok = true;
+      for (let k = 2; k < length; k++) {
+        if (!set.has(sorted[i] + k * d)) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) return true;
+    }
+  }
+  return false;
+}

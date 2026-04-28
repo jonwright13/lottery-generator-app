@@ -1,0 +1,94 @@
+"use client";
+
+import { Card } from "@/components/ui/card";
+import { HelpPopover } from "@/components/ui/help-popover";
+import { useData } from "@/context/useDataProvider";
+import type { ThresholdCriteria } from "@/lib/generator";
+import { useMemo } from "react";
+
+interface Props {
+  analysis: ThresholdCriteria;
+}
+
+const TOP_N = 5;
+
+interface PositionTop {
+  label: string;
+  total: number;
+  entries: Array<{ num: string; count: number; pct: number }>;
+}
+
+export const TopNumbersPerPosition = ({ analysis }: Props) => {
+  const { fields } = useData();
+  const positions = useMemo<PositionTop[]>(() => {
+    return analysis.positionCounters.map((counter, idx) => {
+      const total = Object.values(counter).reduce((a, b) => a + b, 0);
+      const entries = Object.entries(counter)
+        .map(([num, count]) => ({
+          num,
+          count,
+          pct: total > 0 ? (count / total) * 100 : 0,
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, TOP_N);
+      return { label: fields[idx]?.label ?? `P${idx + 1}`, total, entries };
+    });
+  }, [analysis.positionCounters, fields]);
+
+  return (
+    <Card className="flex flex-col gap-y-3 p-4 w-full">
+      <div className="flex items-start justify-between gap-x-3">
+        <div className="flex flex-col gap-y-1">
+          <h2 className="text-lg font-medium">
+            Most-drawn numbers per sorted position
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Top {TOP_N} numbers for each draw position after sorting (smallest
+            → largest main, then the bonus number(s)).
+          </p>
+        </div>
+        <HelpPopover title="Most-drawn numbers per sorted position">
+          <p>
+            Each historical draw is sorted smallest to largest before counting,
+            so the &ldquo;P1&rdquo; column is always the lowest of the five
+            mains and &ldquo;P5&rdquo; is always the highest. For each slot we
+            list the {TOP_N} numbers that have landed there most often.
+          </p>
+          <p>
+            <strong>Why it matters:</strong> when picking a set you can sanity
+            check that your lowest number isn&apos;t one that almost never
+            shows up as a low ball, and likewise for the highest. The
+            generator&apos;s scoring uses the same per-position frequencies,
+            so candidates that match this shape get higher scores.
+          </p>
+        </HelpPopover>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-2">
+        {positions.map((pos) => (
+          <div
+            key={pos.label}
+            className="flex flex-col gap-y-1.5 rounded-md border p-2"
+          >
+            <h3 className="text-xs font-medium text-muted-foreground">
+              {pos.label}
+            </h3>
+            <ol className="flex flex-col gap-y-1">
+              {pos.entries.map((e) => (
+                <li
+                  key={e.num}
+                  className="flex items-center justify-between gap-x-2 text-xs tabular-nums"
+                >
+                  <span className="font-mono font-semibold">{e.num}</span>
+                  <span className="text-muted-foreground">
+                    {e.pct.toFixed(1)}%
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+};

@@ -42,3 +42,6 @@ next-env.d.ts
 
 # internal tracking docs (not committed)
 /internal-docs
+
+# Claude
+.claude/
