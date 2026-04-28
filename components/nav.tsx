@@ -36,9 +36,9 @@ const NavLink = ({ href, path, label }: NavLinkProps) => {
       href={href}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "transition-colors hover:underline underline-offset-4",
+        "transition-colors hover:underline underline-offset-4 decoration-2",
         isActive
-          ? "font-semibold underline decoration-2"
+          ? "text-foreground underline"
           : "text-muted-foreground hover:text-foreground",
       )}
     >
