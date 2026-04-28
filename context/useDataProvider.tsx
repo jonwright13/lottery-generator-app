@@ -24,6 +24,7 @@ import {
 import { useSearchParams } from "next/navigation";
 import euromillionsData from "@/public/data/euromillions.json";
 import lottoData from "@/public/data/lotto.json";
+import setForLifeData from "@/public/data/set-for-life.json";
 
 type RawGameData = {
   fetchedAt: string;
@@ -39,6 +40,7 @@ type RawGameData = {
 const RAW_DATA: Record<string, RawGameData> = {
   euromillions: euromillionsData as RawGameData,
   lotto: lottoData as RawGameData,
+  "set-for-life": setForLifeData as RawGameData,
 };
 
 const buildSeededOptions = (
