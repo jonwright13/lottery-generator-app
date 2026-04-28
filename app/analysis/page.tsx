@@ -12,6 +12,10 @@ import { NumberFrequency } from "@/components/analysis-components/number-frequen
 import { OddEvenDistribution } from "@/components/analysis-components/odd-even-distribution";
 import { PairCoOccurrence } from "@/components/analysis-components/pair-cooccurrence";
 import { PreviousDrawOverlap } from "@/components/analysis-components/previous-draw-overlap";
+import {
+  SectionToc,
+  type SectionItem,
+} from "@/components/analysis-components/section-toc";
 import { SumDistribution } from "@/components/analysis-components/sum-distribution";
 import { TopNumbersPerPosition } from "@/components/analysis-components/top-numbers-per-position";
 import { TripletCoOccurrence } from "@/components/analysis-components/triplet-cooccurrence";
@@ -22,6 +26,7 @@ import {
   seedCustomRange,
   type WindowKey,
 } from "@/components/analysis-components/window-filter";
+import { BackToTop } from "@/components/back-to-top";
 import { Heatmap } from "@/components/position-heat-map";
 import { useData } from "@/context/useDataProvider";
 import { ThresholdCriteria } from "@/lib/generator";
@@ -35,6 +40,25 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const isISODate = (v: string | null): v is string =>
   v !== null && ISO_DATE_RE.test(v);
+
+const SECTIONS: ReadonlyArray<SectionItem> = [
+  { id: "heatmap", label: "Position heatmap" },
+  { id: "frequency", label: "Number frequency" },
+  { id: "top-numbers", label: "Top numbers per position" },
+  { id: "max-pattern", label: "Max pattern probabilities" },
+  { id: "sum", label: "Sum of main numbers" },
+  { id: "odd-even", label: "Odd / even split" },
+  { id: "gap", label: "Gap distribution" },
+  { id: "decade", label: "Decade bands" },
+  { id: "last-digit", label: "Last-digit distribution" },
+  { id: "multiples", label: "Multiples-of-N caps" },
+  { id: "previous-draw", label: "Previous-draw overlap" },
+  { id: "ap", label: "Arithmetic progression" },
+  { id: "consecutive-run", label: "Consecutive runs" },
+  { id: "pair", label: "Pair co-occurrence" },
+  { id: "triplet", label: "Triplet co-occurrence" },
+  { id: "hot-cold", label: "Hot & cold numbers" },
+];
 
 export default function AnalysisPage() {
   return (
@@ -191,46 +215,82 @@ const AnalysisContent = () => {
         </p>
       ) : (
         <>
-          <Heatmap
-            analysis={windowedAnalysis}
-            pastNumbers={windowedPast}
-            dates={windowedDates}
-          />
+          <SectionToc sections={SECTIONS} />
 
-          <NumberFrequency analysis={windowedAnalysis} />
+          <section id="heatmap" className="scroll-mt-6 w-full">
+            <Heatmap
+              analysis={windowedAnalysis}
+              pastNumbers={windowedPast}
+              dates={windowedDates}
+            />
+          </section>
 
-          <TopNumbersPerPosition analysis={windowedAnalysis} />
+          <section id="frequency" className="scroll-mt-6 w-full">
+            <NumberFrequency analysis={windowedAnalysis} />
+          </section>
 
-          <MaxPatternProbabilities analysis={windowedAnalysis} />
+          <section id="top-numbers" className="scroll-mt-6 w-full">
+            <TopNumbersPerPosition analysis={windowedAnalysis} />
+          </section>
 
-          <SumDistribution
-            pastNumbers={windowedPast}
-            analysis={windowedAnalysis}
-          />
+          <section id="max-pattern" className="scroll-mt-6 w-full">
+            <MaxPatternProbabilities analysis={windowedAnalysis} />
+          </section>
 
-          <OddEvenDistribution analysis={windowedAnalysis} />
+          <section id="sum" className="scroll-mt-6 w-full">
+            <SumDistribution
+              pastNumbers={windowedPast}
+              analysis={windowedAnalysis}
+            />
+          </section>
 
-          <GapDistribution analysis={windowedAnalysis} />
+          <section id="odd-even" className="scroll-mt-6 w-full">
+            <OddEvenDistribution analysis={windowedAnalysis} />
+          </section>
 
-          <ClusterDistribution pastNumbers={windowedPast} />
+          <section id="gap" className="scroll-mt-6 w-full">
+            <GapDistribution analysis={windowedAnalysis} />
+          </section>
 
-          <LastDigitDistribution analysis={windowedAnalysis} />
+          <section id="decade" className="scroll-mt-6 w-full">
+            <ClusterDistribution pastNumbers={windowedPast} />
+          </section>
 
-          <MultiplesDistribution analysis={windowedAnalysis} />
+          <section id="last-digit" className="scroll-mt-6 w-full">
+            <LastDigitDistribution analysis={windowedAnalysis} />
+          </section>
 
-          <PreviousDrawOverlap analysis={windowedAnalysis} />
+          <section id="multiples" className="scroll-mt-6 w-full">
+            <MultiplesDistribution analysis={windowedAnalysis} />
+          </section>
 
-          <ArithmeticProgressionDistribution analysis={windowedAnalysis} />
+          <section id="previous-draw" className="scroll-mt-6 w-full">
+            <PreviousDrawOverlap analysis={windowedAnalysis} />
+          </section>
 
-          <ConsecutiveRunDistribution analysis={windowedAnalysis} />
+          <section id="ap" className="scroll-mt-6 w-full">
+            <ArithmeticProgressionDistribution analysis={windowedAnalysis} />
+          </section>
 
-          <PairCoOccurrence analysis={windowedAnalysis} />
+          <section id="consecutive-run" className="scroll-mt-6 w-full">
+            <ConsecutiveRunDistribution analysis={windowedAnalysis} />
+          </section>
 
-          <TripletCoOccurrence analysis={windowedAnalysis} />
+          <section id="pair" className="scroll-mt-6 w-full">
+            <PairCoOccurrence analysis={windowedAnalysis} />
+          </section>
 
-          <HotColdNumbers pastNumbers={windowedPast} />
+          <section id="triplet" className="scroll-mt-6 w-full">
+            <TripletCoOccurrence analysis={windowedAnalysis} />
+          </section>
+
+          <section id="hot-cold" className="scroll-mt-6 w-full">
+            <HotColdNumbers pastNumbers={windowedPast} />
+          </section>
         </>
       )}
+
+      <BackToTop />
     </div>
   );
 };
