@@ -74,6 +74,7 @@ interface DataContextValue {
   analysis: ThresholdCriteria;
   dates: string[];
   genOptions: GenerateValidNumberSetOptions;
+  seededOptions: GenerateValidNumberSetOptions;
   updateOptions: UpdateOptions;
   resetOptions: () => void;
   isAtDefaults: boolean;
@@ -157,6 +158,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       dates,
       analysis,
       genOptions,
+      seededOptions,
       updateOptions,
       resetOptions,
       isAtDefaults,
@@ -169,6 +171,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       dates,
       analysis,
       genOptions,
+      seededOptions,
       updateOptions,
       resetOptions,
       isAtDefaults,
