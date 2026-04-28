@@ -15,11 +15,14 @@ import {
 } from "@/components/ui/tooltip";
 import { useData } from "@/context/useDataProvider";
 import {
+  countQualifyingDraws,
   ThresholdCriteria,
   type GenerateValidNumberSetOptions,
   type UpdateOptions,
 } from "@/lib/generator";
+import { cn } from "@/lib/utils";
 import { RotateCcwIcon } from "lucide-react";
+import { useMemo } from "react";
 import { GeneratorProps } from "../types";
 import {
   ClusterMaxItem,
@@ -86,9 +89,20 @@ export const GeneratorControls = ({
   genOptions,
   updateOptions,
 }: Props) => {
-  const { game, seededOptions, resetOptions, isAtDefaults } = useData();
+  const { game, pastNumbers, seededOptions, resetOptions, isAtDefaults } =
+    useData();
   const bonusLabel = game.bonus.label.toLowerCase();
   const showBonusGap = game.bonus.count > 1;
+
+  // Live "of N historical draws, how many would pass the current constraint
+  // set" — recomputes whenever any threshold changes. ~3-5 ms across all four
+  // games, so it's safe on every option keystroke.
+  const qualifying = useMemo(
+    () => countQualifyingDraws(pastNumbers, genOptions),
+    [pastNumbers, genOptions],
+  );
+  const qualifyingPct =
+    qualifying.total > 0 ? (qualifying.pass / qualifying.total) * 100 : 0;
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!analysis) return;
     // Inputs in this surface only drive numeric option keys.
@@ -106,29 +120,57 @@ export const GeneratorControls = ({
 
   return (
     <Card className="flex flex-col gap-y-4 border rounded-md p-4 w-full h-full">
-      <div className="flex items-center justify-between gap-x-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <h3 className="text-lg font-semibold">Controls</h3>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={resetOptions}
-              disabled={isAtDefaults}
-              aria-label="Reset controls to data-derived defaults"
-              className="gap-1.5 text-muted-foreground"
-            >
-              <RotateCcwIcon className="size-3.5" aria-hidden />
-              Reset
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {isAtDefaults
-              ? "Already at data-derived defaults"
-              : "Reset to data-derived defaults"}
-          </TooltipContent>
-        </Tooltip>
+        <div className="flex items-center gap-x-2">
+          {qualifying.total > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className={cn(
+                    "text-xs tabular-nums cursor-default",
+                    qualifyingPct >= 25
+                      ? "text-muted-foreground"
+                      : qualifyingPct >= 5
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-red-600 dark:text-red-400",
+                  )}
+                  aria-live="polite"
+                >
+                  {qualifying.pass.toLocaleString()} of{" "}
+                  {qualifying.total.toLocaleString()} draws qualify
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                Of all historical {game.name} draws, {qualifyingPct.toFixed(1)}%
+                would pass the current constraint set. Lower numbers mean
+                tighter controls — and a generator that has to work harder to
+                find a valid combination.
+              </TooltipContent>
+            </Tooltip>
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={resetOptions}
+                disabled={isAtDefaults}
+                aria-label="Reset controls to data-derived defaults"
+                className="gap-1.5 text-muted-foreground"
+              >
+                <RotateCcwIcon className="size-3.5" aria-hidden />
+                Reset
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isAtDefaults
+                ? "Already at data-derived defaults"
+                : "Reset to data-derived defaults"}
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
       <Accordion type="single" collapsible>
         <AccordionItem value="max-iterations">
