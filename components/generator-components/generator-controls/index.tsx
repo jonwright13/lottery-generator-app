@@ -49,10 +49,12 @@ const TriggerRow = ({
   label,
   helper,
   value,
+  modified,
 }: {
   label: string;
   helper?: string;
   value: string;
+  modified?: boolean;
 }) => (
   <span className="flex w-full items-start justify-between gap-3 pr-2">
     <span className="flex flex-col gap-y-0.5 text-left">
@@ -63,8 +65,17 @@ const TriggerRow = ({
         </span>
       )}
     </span>
-    <span className="text-muted-foreground tabular-nums font-normal text-xs shrink-0 pt-0.5">
-      {value}
+    <span className="flex items-center gap-x-1.5 shrink-0 pt-0.5">
+      {modified && (
+        <span
+          aria-label="Modified from default"
+          title="Modified from default"
+          className="size-1.5 rounded-full bg-amber-500"
+        />
+      )}
+      <span className="text-muted-foreground tabular-nums font-normal text-xs">
+        {value}
+      </span>
     </span>
   </span>
 );
@@ -74,7 +85,7 @@ export const GeneratorControls = ({
   genOptions,
   updateOptions,
 }: Props) => {
-  const { game, resetOptions, isAtDefaults } = useData();
+  const { game, seededOptions, resetOptions, isAtDefaults } = useData();
   const bonusLabel = game.bonus.label.toLowerCase();
   const showBonusGap = game.bonus.count > 1;
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,6 +94,14 @@ export const GeneratorControls = ({
     const name = e.target.name as NumericOptionKey;
     updateOptions(name, Number(e.target.value));
   };
+
+  // True when any of the named keys differs from its data-derived seeded
+  // value. JSON.stringify handles the tuple/object-valued keys (oddRange,
+  // maxMultiplesAllowed) without a custom comparator.
+  const isModified = (...keys: Array<keyof GenerateValidNumberSetOptions>) =>
+    keys.some(
+      (k) => JSON.stringify(genOptions[k]) !== JSON.stringify(seededOptions[k]),
+    );
 
   return (
     <Card className="flex flex-col gap-y-4 border rounded-md p-4 w-full h-full">
@@ -117,6 +136,7 @@ export const GeneratorControls = ({
               label="How long to keep trying"
               helper="Maximum iterations"
               value={genOptions.maxIterations.toLocaleString()}
+              modified={isModified("maxIterations")}
             />
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
@@ -132,6 +152,7 @@ export const GeneratorControls = ({
               label="How closely numbers match historical positions"
               helper="Min positional frequency score"
               value={`${genOptions.minScore}%`}
+              modified={isModified("minScore")}
             />
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
@@ -147,6 +168,7 @@ export const GeneratorControls = ({
               label="How much to reward pairs that often draw together"
               helper="Pair-score weight"
               value={`${Math.round(genOptions.pairScoreWeight * 100)}%`}
+              modified={isModified("pairScoreWeight")}
             />
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
@@ -166,6 +188,7 @@ export const GeneratorControls = ({
                   ? `${Math.round(genOptions.recentBias * 100)}% of last ${genOptions.recentWindowSize}`
                   : "off"
               }
+              modified={isModified("recentBias", "recentWindowSize")}
             />
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
@@ -181,6 +204,7 @@ export const GeneratorControls = ({
               label="Total of the main numbers"
               helper="Sum range"
               value={`${genOptions.sumMin}–${genOptions.sumMax}`}
+              modified={isModified("sumMin", "sumMax")}
             />
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
@@ -196,6 +220,7 @@ export const GeneratorControls = ({
               label="How clumpy the numbers can be"
               helper="Cluster max (per group of 10)"
               value={String(genOptions.clusterMax)}
+              modified={isModified("clusterMax")}
             />
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
@@ -211,6 +236,7 @@ export const GeneratorControls = ({
               label="How many numbers can share a last digit"
               helper="Last-digit spread"
               value={String(genOptions.maxSameLastDigit)}
+              modified={isModified("maxSameLastDigit")}
             />
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
@@ -226,6 +252,7 @@ export const GeneratorControls = ({
               label="How many numbers can repeat from the last draw"
               helper="Previous-draw overlap"
               value={String(genOptions.maxPreviousDrawOverlap)}
+              modified={isModified("maxPreviousDrawOverlap")}
             />
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
@@ -241,6 +268,7 @@ export const GeneratorControls = ({
               label="Balance of odd and even numbers"
               helper="Odd/even split"
               value={`${genOptions.oddRange[0]}–${genOptions.oddRange[1]} odd`}
+              modified={isModified("oddRange")}
             />
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
@@ -261,6 +289,10 @@ export const GeneratorControls = ({
                   ? `main ≤ ${genOptions.maxMainGapThreshold}, ${bonusLabel} ≤ ${genOptions.maxLuckyGapThreshold}`
                   : `main ≤ ${genOptions.maxMainGapThreshold}`
               }
+              modified={isModified(
+                "maxMainGapThreshold",
+                "maxLuckyGapThreshold",
+              )}
             />
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-y-2">
