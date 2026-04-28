@@ -131,7 +131,11 @@ const AnalysisContent = () => {
         </p>
       ) : (
         <>
-          <Heatmap analysis={windowedAnalysis} />
+          <Heatmap
+            analysis={windowedAnalysis}
+            pastNumbers={windowedPast}
+            dates={windowedDates}
+          />
 
           <NumberFrequency analysis={windowedAnalysis} />
 
