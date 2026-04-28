@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ThresholdCriteria } from "@/lib/generator";
+import { ThresholdCriteria, type LotteryTuple } from "@/lib/generator";
 import type { FieldDef } from "@/constants";
 import { useData } from "@/context/useDataProvider";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,10 @@ import { PositionHeatmap } from "./position-heat-map";
 
 interface Props {
   analysis: ThresholdCriteria | null;
+  // Optional override draws/dates so the cell drill-down popover stays
+  // consistent with a windowed analysis. Defaults to full history.
+  pastNumbers?: LotteryTuple[];
+  dates?: string[];
 }
 
 interface FieldGroup {
@@ -34,8 +38,14 @@ function groupFieldsByMax(fields: FieldDef[]): FieldGroup[] {
   return groups;
 }
 
-export const Heatmap = ({ analysis }: Props) => {
-  const { game, fields } = useData();
+export const Heatmap = ({
+  analysis,
+  pastNumbers: pastOverride,
+  dates: datesOverride,
+}: Props) => {
+  const { game, fields, pastNumbers: fullPast, dates: fullDates } = useData();
+  const pastNumbers = pastOverride ?? fullPast;
+  const dates = datesOverride ?? fullDates;
   const groups = groupFieldsByMax(fields);
   const [usePct, setUsePct] = useState(true);
 
@@ -118,6 +128,9 @@ export const Heatmap = ({ analysis }: Props) => {
               minNum={1}
               maxNum={group.max}
               usePct={usePct}
+              pastNumbers={pastNumbers}
+              dates={dates}
+              mainCount={game.main.count}
             />
           </div>
         );
