@@ -6,13 +6,20 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useData } from "@/context/useDataProvider";
 import {
   ThresholdCriteria,
   type GenerateValidNumberSetOptions,
   type UpdateOptions,
 } from "@/lib/generator";
+import { RotateCcwIcon } from "lucide-react";
 import { GeneratorProps } from "../types";
 import {
   ClusterMaxItem,
@@ -52,7 +59,7 @@ export const GeneratorControls = ({
   genOptions,
   updateOptions,
 }: Props) => {
-  const { game } = useData();
+  const { game, resetOptions, isAtDefaults } = useData();
   const bonusLabel = game.bonus.label.toLowerCase();
   const showBonusGap = game.bonus.count > 1;
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,7 +71,30 @@ export const GeneratorControls = ({
 
   return (
     <Card className="flex flex-col gap-y-4 border rounded-md p-4 w-full h-full">
-      <h3 className="text-lg font-semibold">Controls</h3>
+      <div className="flex items-center justify-between gap-x-2">
+        <h3 className="text-lg font-semibold">Controls</h3>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={resetOptions}
+              disabled={isAtDefaults}
+              aria-label="Reset controls to data-derived defaults"
+              className="gap-1.5 text-muted-foreground"
+            >
+              <RotateCcwIcon className="size-3.5" aria-hidden />
+              Reset
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {isAtDefaults
+              ? "Already at data-derived defaults"
+              : "Reset to data-derived defaults"}
+          </TooltipContent>
+        </Tooltip>
+      </div>
       <Accordion type="single" collapsible>
         <AccordionItem value="max-iterations">
           <AccordionTrigger>

@@ -75,6 +75,8 @@ interface DataContextValue {
   dates: string[];
   genOptions: GenerateValidNumberSetOptions;
   updateOptions: UpdateOptions;
+  resetOptions: () => void;
+  isAtDefaults: boolean;
 }
 
 interface DataProviderProps {
@@ -134,6 +136,18 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     setGenOptions((prev) => ({ ...prev, [key]: value }));
   }, []);
 
+  const resetOptions = useCallback(() => {
+    setGenOptions(seededOptions);
+  }, [seededOptions]);
+
+  // Both objects come from the same code paths (DEFAULT_OPTIONS spread + the
+  // same ordered seed keys), so JSON.stringify gives stable key order and a
+  // correct deep equality without pulling in a comparator.
+  const isAtDefaults = useMemo(
+    () => JSON.stringify(genOptions) === JSON.stringify(seededOptions),
+    [genOptions, seededOptions],
+  );
+
   const value = useMemo(
     () => ({
       game,
@@ -144,6 +158,8 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       analysis,
       genOptions,
       updateOptions,
+      resetOptions,
+      isAtDefaults,
     }),
     [
       game,
@@ -154,6 +170,8 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       analysis,
       genOptions,
       updateOptions,
+      resetOptions,
+      isAtDefaults,
     ],
   );
 
