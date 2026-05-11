@@ -15,14 +15,61 @@ import { setTimeout as delay } from "node:timers/promises";
 
 const UA = "Mozilla/5.0 (compatible; lottery-generator-fetcher/1.0)";
 
+const FETCH_MAX_ATTEMPTS = 4;
+const FETCH_BASE_BACKOFF_MS = 1500;
+
+const isRetriableFetchError = (err) => {
+  const code = err?.cause?.code ?? err?.code;
+  return [
+    "UND_ERR_CONNECT_TIMEOUT",
+    "UND_ERR_SOCKET",
+    "UND_ERR_HEADERS_TIMEOUT",
+    "ECONNRESET",
+    "ECONNREFUSED",
+    "ETIMEDOUT",
+    "EAI_AGAIN",
+    "ENOTFOUND",
+  ].includes(code);
+};
+
 const fetchHtml = async (url) => {
-  const res = await fetch(url, {
-    headers: { "User-Agent": UA, Accept: "text/html,application/xhtml+xml" },
-  });
-  if (!res.ok) {
-    throw new Error(`Fetch ${url} failed ${res.status} ${res.statusText}`);
+  let lastErr;
+  for (let attempt = 1; attempt <= FETCH_MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: { "User-Agent": UA, Accept: "text/html,application/xhtml+xml" },
+        // Give the connect phase longer than undici's default 10s — the runner
+        // sometimes hits cold-cache TLS negotiation that overruns it.
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (!res.ok) {
+        // 5xx and 429 are worth retrying; everything else is a hard fail.
+        if ((res.status >= 500 || res.status === 429) && attempt < FETCH_MAX_ATTEMPTS) {
+          lastErr = new Error(
+            `Fetch ${url} failed ${res.status} ${res.statusText}`,
+          );
+          const wait = FETCH_BASE_BACKOFF_MS * 2 ** (attempt - 1);
+          console.warn(`[fetch] ${url} → ${res.status}; retrying in ${wait}ms`);
+          await delay(wait);
+          continue;
+        }
+        throw new Error(`Fetch ${url} failed ${res.status} ${res.statusText}`);
+      }
+      return res.text();
+    } catch (err) {
+      lastErr = err;
+      const retriable =
+        isRetriableFetchError(err) || err?.name === "TimeoutError";
+      if (!retriable || attempt === FETCH_MAX_ATTEMPTS) throw err;
+      const wait = FETCH_BASE_BACKOFF_MS * 2 ** (attempt - 1);
+      const code = err?.cause?.code ?? err?.code ?? err?.name;
+      console.warn(
+        `[fetch] ${url} → ${code}; retrying in ${wait}ms (attempt ${attempt}/${FETCH_MAX_ATTEMPTS - 1})`,
+      );
+      await delay(wait);
+    }
   }
-  return res.text();
+  throw lastErr;
 };
 
 const pad2 = (n) => n.toString().padStart(2, "0");
