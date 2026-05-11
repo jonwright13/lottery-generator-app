@@ -3,7 +3,9 @@ name: Fetch external data
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "0 6 * * *" # every day
+    # Skip Monday — no UK draw produces results that land on a Monday
+    # morning. Per-source day filtering further narrows each game.
+    - cron: "0 6 * * 0,2-6"
 
 permissions:
   contents: write
@@ -29,7 +31,8 @@ jobs:
         run: npm ci
 
       - name: Fetch data
-        run: npm run fetch:data
+        # Manual runs bypass the per-source day filter; scheduled runs respect it.
+        run: npm run fetch:data ${{ github.event_name == 'workflow_dispatch' && '-- --force' || '' }}
 
       - name: Commit and push if changed
         run: |

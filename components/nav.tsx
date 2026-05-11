@@ -44,14 +44,16 @@ export const Navbar = () => {
 
   return (
     <header className="flex gap-x-4 lg:gap-x-8 justify-between border p-4 items-center w-full">
-      <div className="flex items-center gap-x-3 lg:gap-x-4 min-w-0">
+      <div className="flex items-center gap-x-3 lg:gap-x-4 min-w-0 flex-1">
         <Link
           href={withGame("/")}
-          className="text-base lg:text-lg font-medium lg:font-semibold hover:text-accent-foreground hover:underline truncate"
+          className="min-w-0 text-base lg:text-lg font-medium lg:font-semibold hover:text-accent-foreground hover:underline truncate"
         >
-          <h1>Lottery Number Generator</h1>
+          <h1 className="truncate">Lottery Number Generator</h1>
         </Link>
-        <GameSwitcher />
+        <div className="shrink-0">
+          <GameSwitcher />
+        </div>
       </div>
 
       {/* Large screen navbar */}

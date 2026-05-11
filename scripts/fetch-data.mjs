@@ -66,19 +66,41 @@ const fetchOne = async ({ id, outFile, source, fetch: fetchFn }) => {
 };
 
 const main = async () => {
-  // Optional CLI arg: --game <id> to fetch only one game.
+  // CLI args:
+  //   --game <id>  fetch only one game (also bypasses the day filter)
+  //   --force      bypass the per-source `updateDays` filter
   const args = process.argv.slice(2);
   const onlyIdx = args.indexOf("--game");
   const onlyId = onlyIdx !== -1 ? args[onlyIdx + 1] : null;
+  const force = args.includes("--force") || onlyId !== null;
 
-  const sources = onlyId
+  const candidates = onlyId
     ? DATA_SOURCES.filter((s) => s.id === onlyId)
     : DATA_SOURCES;
 
-  if (onlyId && sources.length === 0) {
+  if (onlyId && candidates.length === 0) {
     throw new Error(
       `--game ${onlyId} matched no entry in DATA_SOURCES (known: ${DATA_SOURCES.map((s) => s.id).join(", ")})`,
     );
+  }
+
+  const today = new Date().getUTCDay();
+  const sources = force
+    ? candidates
+    : candidates.filter((s) => {
+        if (!Array.isArray(s.updateDays) || s.updateDays.length === 0) {
+          return true;
+        }
+        if (s.updateDays.includes(today)) return true;
+        console.log(
+          `[${s.id}] No draw expected today (UTC day ${today}); skipping.`,
+        );
+        return false;
+      });
+
+  if (sources.length === 0) {
+    console.log("Nothing to fetch today.");
+    return;
   }
 
   let failures = 0;

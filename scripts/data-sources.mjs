@@ -291,6 +291,11 @@ export {
  * new game: push a new entry here and ship a matching GameConfig under
  * `lib/games/<id>.ts` with `dataPath` pointing at the same file (relative to
  * `public/`).
+ *
+ * `updateDays` lists the JS day-of-week values (0=Sun…6=Sat, UTC) on which
+ * the source is expected to have new data — i.e. the morning after each
+ * evening draw. Scheduled runs skip sources whose `updateDays` doesn't
+ * include today; manual `--force` runs ignore the filter.
  */
 export const DATA_SOURCES = [
   {
@@ -298,23 +303,31 @@ export const DATA_SOURCES = [
     outFile: "public/data/euromillions.json",
     source: "https://www.lottery.co.uk/euromillions/results/archive-{year}",
     fetch: fetchEuroMillions,
+    // Draws: Tue + Fri → results land Wed + Sat
+    updateDays: [3, 6],
   },
   {
     id: "lotto",
     outFile: "public/data/lotto.json",
     source: "https://www.lottery.co.uk/lotto/results/archive-{year}",
     fetch: fetchLotto,
+    // Draws: Wed + Sat → results land Thu + Sun
+    updateDays: [4, 0],
   },
   {
     id: "set-for-life",
     outFile: "public/data/set-for-life.json",
     source: "https://www.lottery.co.uk/set-for-life/results/archive-{year}",
     fetch: fetchSetForLife,
+    // Draws: Mon + Thu → results land Tue + Fri
+    updateDays: [2, 5],
   },
   {
     id: "thunderball",
     outFile: "public/data/thunderball.json",
     source: "https://www.lottery.co.uk/thunderball/results/archive-{year}",
     fetch: fetchThunderball,
+    // Draws: Tue + Wed + Fri + Sat → results land Wed + Thu + Sat + Sun
+    updateDays: [3, 4, 6, 0],
   },
 ];
